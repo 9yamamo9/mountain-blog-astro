@@ -3,3 +3,5 @@
 
 export const SITE_TITLE = 'Mountain Forest';
 export const SITE_DESCRIPTION = 'This site is the blog about technologies and life';
+
+export const AUTHOR = 'Mt. Three Trees'
