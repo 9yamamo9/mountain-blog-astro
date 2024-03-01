@@ -3,9 +3,21 @@ import Layout from '../layouts/BlogPost.astro'
 import SkillTag from '../components/SkillTag.astro'
 
 const skillSet = [
-	{ Name: 'Git', Years: "5+" },
-	{ Name: 'Terraform', Years: "5+" },
-	{ Name: 'AWS', Years: "5+" },
+	{ Name: 'Git', Years: '5+' },
+	{ Name: 'Terraform', Years: '5+' },
+	{ Name: 'AWS', Years: '5+' },
+	{ Name: 'アジャイル開発/スクラム', Years: '5+' },
+	{ Name: 'CI/CD', Years: '5+' },
+	{ Name: 'GitHub Actions', Years: '3+' },
+	{ Name: 'Serverless', Years: '3+' },
+	{ Name: 'TypeScript', Years: '3+' },
+	{ Name: 'React', Years: '3+' },
+	{ Name: 'Next.js', Years: '3+' },
+	{ Name: 'Container', Years: '3+' },
+	{ Name: 'Test Driven Development', Years: '3+' },
+	{ Name: 'Go', Years: '3+' },
+	{ Name: 'Kotlin', Years: '1+' },
+	{ Name: 'Swift', Years: '1+' }
 ]
 ---
 
@@ -24,6 +36,16 @@ const skillSet = [
 		内製化やアジャイル開発をしたいお客様の開発チームにジョインして、モブプログラミングを通して一緒に開発を行ったり、アジャイルコーチ的なことをしていたりしました。
 		ここでも技術スタックにとらわれず、お客様やプロダクトに対して必要なことに取り組むことをモットーとしていました。
 	</p>
+
 	<h4 class="font-bold">スキルセット</h4>
-	<SkillTag skillSet={skillSet}/>
+	<p>
+		<SkillTag skillSet={skillSet} />
+	</p>
+
+	<h4 class="font-bold">外部登壇</h4>
+	<ul>
+		<li>【ブログ】<a href="https://aws.amazon.com/jp/builders-flash/202209/master-asynchronous-execution-04/?awsf.filter-name=*all" target="_blank">非同期処理を使いこなそう! -第4回 非同期処理の設計上の検討ポイント</a></li>
+		<li>【Youtube】<a href="https://www.youtube.com/watch?v=i7msA8Iq4j4" target="_blank">T5-2: サーバーレスサービスを活用した非同期処理のはじめの一歩</a></li>
+	</ul>
+
 </Layout>
