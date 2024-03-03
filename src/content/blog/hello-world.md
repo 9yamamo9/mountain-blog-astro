@@ -1,11 +1,13 @@
 ---
 title: 'はじめまして'
 description: 'このブログサイトを開始するにあたって初めての投稿になります。'
+tags:
+  - 'General'
 pubDate: 'March 1 2024'
 heroImage: '/blog-placeholder-2.jpg'
 ---
 はじめまして、今日からブログを始めたいと思います。
-もともとは[こちら](https://ymmryt.hatenablog.com/)でブログを運営していましたが、 自分の勉強も兼ねて、ブログサイトを実装しました。
+もともとは[はてなブログ](https://ymmryt.hatenablog.com/)でブログを運営していましたが、 自分の勉強も兼ねて、ブログサイトを実装しました。
 これから、定期的（目標では2週間に1回）に更新していこうと思いますので、よろしくお願いします。
 
 本サイトについては、まだまだ機能的に足りないところもありますが、現時点をMVP（Minimum Viable Product)として、
