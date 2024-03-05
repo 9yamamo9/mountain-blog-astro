@@ -32,7 +32,9 @@ const posts = (await getCollection('blog')).sort(
 							<p class="m-0 text-gray-500 group-hover:text-blue-700">
 								<FormattedDate date={post.data.pubDate} />
 							</p>
-							<ContentTag contentTags={post.data.tags} />
+							<div class="max-md:hidden">
+								<ContentTag contentTags={post.data.tags} />
+							</div>
 						</a>
 					</li>
 				))
