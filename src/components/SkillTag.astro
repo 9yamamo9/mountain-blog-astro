@@ -2,10 +2,10 @@
 const { skillSet } = Astro.props
 ---
 
-<div class="gap-3">
+<div>
 	{skillSet.map(skill => (
 		<span
-			class="bg-gray-100 text-gray-800 text-md font-medium me-2 px-2.5 py-0.5 rounded-full dark:bg-gray-700 dark:text-gray-300">
+			class="bg-gray-200 text-gray-700 text-md font-medium me-2 mb-2 p-1 rounded-full dark:bg-gray-700 dark:text-gray-300 hover:text-red-700">
 		{skill.Name}: {skill.Years}年
 	</span>
 	))}
