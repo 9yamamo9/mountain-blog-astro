@@ -1,0 +1,117 @@
+---
+title: 'CloudWatch AlarmをAWS Chatbotを使ってSlackに通知する'
+description: '本ポストでは、CloudWatch AlarmをAWS Chatbotを利用して特定のSlack Channelに通知する方法を記載します。'
+tags:
+ - 'Lean'
+ - 'Agile'
+ - 'Scrum'
+ - 'フロー効率'
+ - 'リソース効率'
+pubDate: 'March 6 2024'
+heroImage: '/cloudwatch-alarm-integration-slack.png'
+---
+
+import { Image } from 'astro:assets'
+import architectureCloudWatchAlarmIntegrationSlack from '../assets/cloudwatch-alarm-integration-slack.png'
+import chatbotClientSetting from '../assets/chatbot-client-setting.png'
+import chatbotClientSelect from '../assets/chatbot-client-select.png'
+
+# はじめに
+今回は表題通り、**CloudWatch Alarm**と**SNS**、**AWS Chatbot**を利用した**Slack通知**の実現方法を記載していきます。
+私自身はIaC(Infrastructure as Code)としてはTerraformを利用します。
+ただし、現在TerraformはAWS Chatbotに対応しておりません。
+そのため、AWS ChatbotだけはAWS マネジメントコンソールで作成していきます。
+また、通知先となるSlack Channelについてはすでに作成済みであることとします。
+
+# アーキテクチャ
+<Image class="mb-10" src={architectureCloudWatchAlarmIntegrationSlack} alt='CloudWatch AlarmをSlack通知するためのアーキテクチャ' />
+
+# CloudWatch Alarmの作成
+まずは、CloudWatch Alarmの作成となります。
+ここでは、**ALB(Application Loadbalancer)**の**Targetgroup**における**HealthyHostCount**に対して、しきい値を設けていきます。
+なお、Targetgroupでは1つのHost(ECSにおけるTask)が実行されている状況が正常とします。
+
+```hcl
+resource "aws_cloudwatch_metric_alarm" "sample" {
+  alarm_name          = "SampleAlarm"
+  alarm_description   = "Sample Alarm Verify For Slack Notification"
+  comparison_operator = "LessThanThreshold"
+  evaluation_periods  = 1
+  datapoints_to_alarm = 1
+  metric_name         = "HealthyHostCount"
+  namespace           = "AWS/ApplicationELB"
+  dimensions = {
+    "LoadBalancer" = "app/<alb_name>/exmaple8e4b2d09"
+    "TargetGroup"  = "targetgroup/<targetgroup_name>/exampled7739b8e7"
+  }
+  period        = 60
+  statistic     = "Average"
+  threshold     = 1
+  alarm_actions = [var.cloudwatch_alarm_sns_topic_arn] // 後ほど作成するSNS Topicに対するARNとなります。
+  ok_actions    = [var.cloudwatch_alarm_sns_topic_arn] // 後ほど作成するSNS Topicに対するARNとなります。
+}
+```
+上記は、該当のCloudWatch Alarmを作成する上でのTerraformコードになります。ここで重要なポイントにしぼって説明します。
+
+## 対象となるCloudWatch Metricsの指定方法
+今回は先述の通り、対象のCloudWatch Metricsは**ALB(Application Loadbalancer)**の**Targetgroup**における**HealthyHostCount**となります。
+これらを指定するのに必要な設定値としては、**namespace**、**dimensions**、**metric_name**です。
+
+## しきい値の指定方法
+しきい値を指定する設定は**threshold**と**comparison_operator**になります。
+正常なHost数は1であるため、**Host数が1未満**となったら異常状態とするために、comparison_operatorは**LEssThanThreshold**としています。
+
+## SNSとの連携
+CloudWatch Alarmが取り得る状態としては、**異常(Alarm)**、**正常(OK)**、**No Data**の3種類です。
+それぞれの状態に遷移した際に、SNSへトピックを発行することができます。
+状態ごとに発行先のSNSを指定することができますが、今回はすべて同じSNSを指定しています。
+Terraformコードでは対象SNSのARNを記述することになります。
+
+# SNSの作成
+CloudWatch Alarmがトピックを発行するためのSNSを作成します。
+
+```hcl
+resource "aws_sns_topic" "sample" {
+  name = "cloudwatch-alarm-topic"
+}
+
+resource "aws_sns_topic_policy" "sample" {
+  arn = aws_sns_topic.sample.arn
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = ["sns:Publish"]
+        Principal = {
+          Service = "cloudwatch.amazonaws.com"
+        }
+        Resource = aws_sns_topic.sample.arn
+        Condition = {
+          ArnLike = {
+            "aws:SourceArn" = "arn:aws:cloudwatch:<region>:<account_id>:alarm:<alarm_name>"
+          }
+        }
+      }
+    ]
+  })
+}
+```
+
+# AWS Chatbotの作成
+AWS Chatbotの設定については先述の通りAWS マネジメントコンソールにて実施していきます。
+まずは、**チャットクライアントの設定**にて**Slack**を指定します。
+
+## SlackのPrivate Channelにおける対応
+ひとつだけ、対象のSlack ChannelがPublicの場合には設定はAWS Chatbotのみで完結します。
+ただし、**Private Channel**の場合には対象のChannelに対して**AWSユーザをInviteする**必要があります。
+
+<Image class="mb-10" src={chatbotClientSetting} alt='AWS Chatbotでのクライアントの設定' />
+<Image class="mb-10" src={chatbotClientSelect} alt='AWS Chatbotでのクライアントの選択' />
+
+設定を実施すると、Slackへのアクセス許可を求められるので、問題なければ承認を実施します。
+問題無く連携が完了したら、新たなChannelを追加することで連携することができます。
+
+# さいごに
+いかがだったでしょうか。シンプルな内容で学びもそれほど多くはないかもしれませんが、備忘のために記載しました。
+引き続き、よろしくお願い致します。
