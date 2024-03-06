@@ -27,9 +27,9 @@ const posts = (await getCollection('blog')).sort(
 					<li class="w-[calc(50%-1rem)] first:w-full first:mb-4 first:text-center max-md:text-center max-md:w-full">
 						<a class="group no-underline duration-[0.2s] ease-in-out block" href={`/blog/${post.slug}/`}>
 							<img class="first:w-full" width={720} height={360} src={post.data.heroImage} alt="" />
-							<h4
-								class="m-0 text-black leading-10 group-hover:text-blue-700">{post.data.title}</h4>
-							<p class="m-0 text-gray-500 group-hover:text-blue-700">
+							<h3
+								class="text-black leading-10 group-hover:text-red-700">{post.data.title}</h3>
+							<p class="text-gray-500 group-hover:text-red-700">
 								<FormattedDate date={post.data.pubDate} />
 							</p>
 							<div class="max-md:hidden">
