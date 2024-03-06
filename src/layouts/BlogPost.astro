@@ -18,16 +18,16 @@ const { title, description, tags, pubDate, updatedDate, heroImage } = Astro.prop
 
 <body>
 <Header />
-<main class="w-[calc(100%-2em)] max-w-100% m-0">
+<main>
 	<article>
 		<div class="w-full">
 			{heroImage &&
 				<img class="block mt-0 mr-auto mb-auto ml-auto rounded-xl" width={510} height={255}
 						 src={heroImage} alt="" />}
 		</div>
-		<div class="w-[720px] max-w-[calc(100%-2em)] m-auto p-4 text-gray-700">
+		<div class="w-[720px] max-w-full m-auto p-4 text-gray-700">
 			<div class="mb-4 p-4 text-center leading-10">
-				<div class="bm-8 text-gray-500">
+				<div class="mb-4 text-gray-500">
 					<FormattedDate date={pubDate} />
 					{
 						updatedDate && (
