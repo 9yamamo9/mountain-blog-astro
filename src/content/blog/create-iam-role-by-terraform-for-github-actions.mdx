@@ -1,0 +1,153 @@
+---
+title: 'GitHub Actionsの実行に向けたTerraformによるAWS IAM Roleの作成について'
+description: '本ポストでは、GitHub ActionsがAWSリソースに対する権限を取得するために必要なIAM Role周りのリソース作成について記載します。'
+tags:
+ - 'GitHub Actions'
+ - 'Terraform'
+ - 'AWS'
+ - 'IAM Role'
+ - 'CI/CD'
+ - 'DevOps'
+pubDate: 'January 06 2022'
+heroImage: '/blog-placeholder-4.jpg'
+---
+
+# はじめに
+GitHub ActionsにてAWSリソースをIaC(Terraform、AWS CDK等々)によって構築する際、従来はGitHub Actions用のIAM Userを作成して、権限を付与する方法が一般的であったかと思います。
+しかしながら、現在はIAM Roleによる権限付与の方法が確立されました。このIAM Roleの作成をTerraformによってどのように記述するのかをポイントに本投稿を記載します。
+
+# TerraformによるIAM Roleの作成
+GitHub Actions用のIAM Roleを作成する際に必要となるコンポーネントは次の3つです。
+それは、**IAM ID Provider**と**IAM Role**、**IAM Policy**です。
+
+## IAM ID Provider
+まずは、ID Providerを作成します。
+これにより、AWSの外部ユーザIDにアカウント内のAWSリソースに対するアクセス許可を与えることができます。
+
+```hcl
+resource "aws_iam_openid_connect_provider" "github" {
+  client_id_list  = ["sts.amazonaws.com"]
+  thumbprint_list = ["a031c46782e6e6c662c2c87c76da9aa62ccabd8e"]
+  url             = "https://token.actions.githubusercontent.com"
+}
+```
+
+`client_id_list`は対象者もしくはaudienceとも呼ばれるものを指定します。
+ここでは、`sts.amazonaws.com`と記述しています。
+これは、GitHub Actionsで利用する **actions/configure-aws-credentials@v1**の要求からくるものです。
+
+`thumprint_list`はOpenID Connect Providerがキーを利用できるようにするドメインで使用されるX.509証明書の16進エンコードされたSHA-1ハッシュ値です。
+AWSマネジメントコンソールからID Providerを作成する際には、ProviderのURLを入力すると動的に設定してくれますが、今回はTerraformによる設定のため記述が必要になります。
+
+## IAM Role
+先にID ProviderのTerraformコードができたので、次にIAM Roleを作成します。
+このIAM Roleの信頼関係では、先のID ProviderからのAssume Roleを許可する必要があります。
+また、特定のGitHubリポジトリからのGitHub Actionsのみを許可するための設定も必要となります。
+これらの設定を反映したTerraformコードが以下となります。
+
+```hcl
+resource "aws_iam_role" "github" {
+  name = "GithubActionRole"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = ["sts:AssumeRoleWithWebIdentity"]
+        Principal = {
+          Federated = aws_iam_openid_connect_provider.github.arn
+        }
+        Condition = {
+          StringLike = {
+            "token.actions.githubusercontent.com:sub" = "repo:<GitHub Organization>/<Repository Name>:*"
+          }
+        }
+      }
+    ]
+  })
+}
+```
+
+特定のGitHubリポジトリからのGitHub Actionsのみを許可する設定は、以下の部分に該当します。
+
+```hcl
+Condition = {
+  StringLike = {
+    "token.actions.githubusercontent.com:sub" = "repo:<GitHub Organization>/<Repository Name>:*"
+  }
+}
+```
+
+ただし、これだと特定の単一GitHubリポジトリのみが対象となります。
+そのため、例えば複数のGitHubリポジトリを指定したい場合には配列による指定が可能です。
+
+```hcl
+Condition = {
+  StringLike = {
+    "token.actions.githubusercontent.com:sub" = [
+      "repo:<GitHub Organization>/<Repository Name A>:*",
+      "repo:<GitHub Organization>/<Repository Name B>:*",
+    ]
+  }
+}
+
+```
+
+また、特定のGitHub Organizationの任意のリポジトリを指定することも可能となります。
+
+```hcl
+Condition = {
+  StringLike = {
+    "token.actions.githubusercontent.com:sub" = "repo:<GitHub Organization>/*:*"
+  }
+}
+```
+
+いずれにせよ、上記のような **Condition句**の記載がない場合にはどのようなリポジトリからのGitHub Actionsも対象となってしまうのでご注意ください。
+
+## IAM Policy
+先に作成したIAM Roleに付与するIAM Policyを作成します。つまり、GitHub Actionsに許可するPolicyを設定するということです。
+IAM Policyを作成するためのTerraformコードについてはTerraformのドキュメントや他ブログなどでも詳細な記述があると思いますので、ここでは割愛します。
+
+# GitHub Actionsの実行について
+最後に、GitHub Actionsにて先に作成したIAM RoleへどのようにAssume Roleするのかをyamlファイルで記載します。
+
+```yaml
+name: 'Sample'
+on:
+  push:
+    branches:
+      - main
+env:
+  AWS_REGION: 'ap-northeast-1'
+jobs:
+  cdk:
+    name: 'Sample Action'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: ${{ secrets.ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: AWS STS Get Caller Identity
+        run: aws sts get-caller-identity
+```
+
+今回のようにID Providerを利用する場合には、`permission:`以下の内容がまずは必要となります。
+そして、要の部分は**aws-actions/configure-aws-credentials@v1**です。
+このモジュールの引数として`role-to-assume`と`aws-region`が必要となります。
+この`role-to-assume`は先に作成したIAM RoleのARNを指定します。
+ここでは、GitHubのSecretsに該当ARNを設定しているため、それを呼び出す記述になっています。
+
+# さいごに
+いかがだったでしょうか。最近ではこれらの内容を紹介するブログが増えているように感じますが、それぞれの設定などを理解するのに少々時間が掛かりました。
+また、IAM Role関連の作成はCloudFormationでの紹介が多く、Terraformユーザに少しでも役に立てれば幸いです。
