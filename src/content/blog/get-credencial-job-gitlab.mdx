@@ -1,0 +1,193 @@
+---
+title: 'GitLab CI/CD PipelineにおけるAWS IAM Roleでのクレデンシャル取得の方法とJobでの継承について'
+description: ''
+tags:
+ - 'GitLab'
+ - 'Terraform'
+ - 'AWS'
+ - 'IAM Role'
+ - 'CI/CD'
+ - 'DevOps'
+pubDate: 'May 03 2022'
+heroImage: '/blog-placeholder-5.jpg'
+---
+
+# はじめに
+今回はGitLab CI/CD Pipelineにおいて、同様の観点からブログを記載していこうと思います。
+また、各Jobにおいて取得したクレデンシャルを継承していくことで都度取得する手間からも解放していきたいと思います。
+
+# Terraformによる必要リソースの作成
+GItHub Actionsの時と同様に、IAM Roleに対するAssume Roleを可能にするためには大きく次の3つのコンポーネントが必要となります。
+それは、**IAM OIDC Provider**と**IAM Role**、**IAM Policy**です。
+今回はIAM OICD ProviderとIAM Roleについて記載していきたいと思います。
+なぜならば、IAM Policyについては読者の方々が適切な権限を選定していただくことになります。
+また、IAM Policyの作成に関するTerraformの知見はインターネットに無数に転がっているため、ここでは割愛させていただきます。
+
+## IAM OIDC Providerの作成
+ますは、ID Providerを作成します。
+
+```hcl
+data "http" "gitlab_openid_configuration" {
+  url = "https://gitlab.com/.well-known/openid-configuration"
+}
+
+data "tls_certificate" "gitlab" {
+  url = jsondecode(data.http.gitlab_openid_configuration.body).jwks_uri
+}
+
+resource "aws_iam_openid_connect_provider" "gitlab" {
+  client_id_list  = ["https://gitlab.com"]
+  thumbprint_list = [data.tls_certificate.gitlab.certificates[0].sha1_fingerprint]
+  url             = "https://gitlab.com"
+}
+```
+
+まずは、OICD Providernいおけるサムプリントの取得を実施する必要があります。
+詳細については以下をご覧いただければと思いますが、Terraformコードにおける重要な部分はdata resourceで記述されている部分です。
+基本的に、OIDCの規格は同じなので、上記のようにすればGitHub ActionsやCircle-ciでも同様の記述を行うことができるはずです。
+
+<cite><a href="https://docs.aws.amazon.com/ja_jp/IAM/latest/UserGuide/id_roles_providers_create_oidc_verify-thumbprint.html">OpenID Connect ID プロバイダーのサムプリントの取得</a></cite>
+
+## IAM Roleの作成
+次は、IAM Roleを作成します。
+
+```hcl
+resource "aws_iam_role" "gitlab_assume_role" {
+  name = "gitlab-assume-role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = ["sts:AssumeRoleWithWebIdentity"]
+        Principal = {
+          Federated = aws_iam_openid_connect_provider.gitlab.arn
+        }
+        Condition = {
+          StringLike = {
+            "gitlab.com:sub" = "project_path:<my_group>/<my_project>:*"
+          }
+        }
+      }
+    ]
+  })
+}
+```
+
+GitHub Actionsの時とあまり変わらないのですが、念の為説明をしていきたいと思います。
+まず、`Principal`における`Federated`の値は前セクションで作成したOICD ProviderのARNを指定しています。
+これにより、該当OICD Providerが本IAM RoleへのAssume Roleを許可していることになります。
+ただし、これだけですと他のGitLab CI/CD PipelineからもAssume Roleが許可されている状況となってしまうため、`Condition`による制限が必要になってきます。
+具体的には以下の部分です。
+
+```hcl
+Condition = {
+  StringLike = {
+    "gitlab.com:sub" = "project_path:<my_group>/<my_project>:*"
+  }
+}
+```
+
+`<my_group>`と`<my_project>`については各自の値になります。
+これらのTerraformコードを記述してapplyを実施することにより、必要なリソースが作成されます。
+
+# .gitlab-ci.ymlの記述について
+上記で必要なリソースが作成されたので、次はgitlab-ci.ymlについて書いていきたいと思います。
+サンプルは以下のコードとなります。
+
+```yaml
+image:
+  name: hashicorp/terraform:1.1.9
+  entrypoint: [""]
+
+stages:
+  - assume_role
+  - plan
+
+before_script:
+  - apk update --no-cache && apk add --no-cache aws-cli jq
+
+assume_role:
+  stage: assume_role
+  script:
+    - >
+      credentials=`aws sts assume-role-with-web-identity
+      --role-arn ${ROLE_ARN}
+      --role-session-name "GitLabRunner-${CI_PROJECT_ID}-${CI_PIPELINE_ID}"
+      --web-identity-token $CI_JOB_JWT_V2
+      --duration-seconds 3600 | jq .Credentials`
+    - export AWS_ACCESS_KEY_ID=`echo ${credentials} | jq -r .AccessKeyId`
+    - export AWS_SECRET_ACCESS_KEY=`echo ${credentials} | jq -r .SecretAccessKey`
+    - export AWS_SESSION_TOKEN=`echo ${credentials} | jq -r .SessionToken`
+    - echo COMMON_AWS_ACCESS_KEY_ID=`echo ${credentials} | jq -r .AccessKeyId` >> assume_role.env
+    - echo COMMON_AWS_SECRET_ACCESS_KEY=`echo ${credentials} | jq -r .SecretAccessKey` >> assume_role.env
+    - echo COMMON_AWS_SESSION_TOKEN=`echo ${credentials} | jq -r .SessionToken` >> assume_role.env
+    - aws sts get-caller-identity
+  artifacts:
+    reports:
+      dotenv: assume_role.env
+
+plan:
+  stage: plan
+  script:
+    - export AWS_ACCESS_KEY_ID=`echo ${COMMON_AWS_ACCESS_KEY_ID}`
+    - export AWS_SECRET_ACCESS_KEY=`echo ${COMMON_AWS_SECRET_ACCESS_KEY}`
+    - export AWS_SESSION_TOKEN=`echo ${COMMON_AWS_SESSION_TOKEN}`
+    - aws sts get-caller-identity
+  dependencies:
+    - assume_role
+```
+
+## クレデンシャルの取得について
+作成したIAM RoleにAssume Roleを実施して、クレデンシャルを取得し、環境変数へ格納する部分だけを抜粋すると以下の部分になります。
+`${ROLE_ARN}`はGitLab CI/CDの**Variables**にて管理されている変数となります。
+その他の変数については予めGitLab側で用意されているものですので、特段気をつける必要はありません。
+結局のところ、AWS CLIで必要な情報を取得しているだけですね。
+
+```yaml
+script:
+    - >
+      credentials=`aws sts assume-role-with-web-identity
+      --role-arn ${ROLE_ARN}
+      --role-session-name "GitLabRunner-${CI_PROJECT_ID}-${CI_PIPELINE_ID}"
+      --web-identity-token $CI_JOB_JWT_V2
+      --duration-seconds 3600 | jq .Credentials`
+    - export AWS_ACCESS_KEY_ID=`echo ${credentials} | jq -r .AccessKeyId`
+    - export AWS_SECRET_ACCESS_KEY=`echo ${credentials} | jq -r .SecretAccessKey`
+    - export AWS_SESSION_TOKEN=`echo ${credentials} | jq -r .SessionToken`
+```
+
+## 環境変数の継承について
+Job間では基本的には環境変数は共通化されていません。
+そのため、Job1で設定した環境変数はJob2では利用できなくなっています。
+今回のクレデンシャルの場合、各Jobで都度取得してもいいのですが、せっかくなら継承していきたいと思いまして調べました。
+まずは、環境変数を別のJobでも利用できるようにするめの格納からですが、該当コードは以下の部分となります。
+
+```yaml
+    - echo COMMON_AWS_ACCESS_KEY_ID=`echo ${credentials} | jq -r .AccessKeyId` >> assume_role.env
+    - echo COMMON_AWS_SECRET_ACCESS_KEY=`echo ${credentials} | jq -r .SecretAccessKey` >> assume_role.env
+    - echo COMMON_AWS_SESSION_TOKEN=`echo ${credentials} | jq -r .SessionToken` >> assume_role.env
+  artifacts:
+    reports:
+      dotenv: assume_role.env
+
+```
+
+`artifacts`以下の記述によって、envファイルが他のJobでも参照できるようになります。
+そして、環境変数を参照する場合、その処理を記述しているのは以下のコードとなります。
+
+```yaml
+  script:
+    - export AWS_ACCESS_KEY_ID=`echo ${COMMON_AWS_ACCESS_KEY_ID}`
+    - export AWS_SECRET_ACCESS_KEY=`echo ${COMMON_AWS_SECRET_ACCESS_KEY}`
+    - export AWS_SESSION_TOKEN=`echo ${COMMON_AWS_SESSION_TOKEN}`
+ dependencies:
+    - assume_role
+```
+継承には`dependencies`キーワードを利用する方法と`needs`キーワードを利用する方法の2パターンがあるようですが、今回は前者を利用しました。
+詳細については以下の公式ドキュメントを参考にしてください。
+
+<cite><a href="https://gitlab-docs.creationline.com/ee/ci/variables/#inherit-environment-variables">GitLab CI/CD変数</a></cite>
+
+# さいごに
+いかがでしたでしょうか。GitLab CI/CDを利用している方も多いのではないでしょうか。そういった方々へAWSリソースの構築の一助になれば幸いです。
