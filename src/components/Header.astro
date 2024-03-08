@@ -3,8 +3,8 @@ import HeaderLink from './HeaderLink.astro'
 import { SITE_TITLE } from '../consts'
 ---
 
-<header class="bg-gray-300">
-	<nav class="flex items-center content-between p-3">
+<header class="bg-gray-300 p-3">
+	<nav class="flex items-center content-between">
 		<h1 class="font-bold text-5xl"><a class="p-1 text-black hover:text-inherit" href="/">{SITE_TITLE}</a></h1>
 		<div class="internal-links flex-1 ml-6">
 			<HeaderLink class="text-gray-700 text-3xl hover:text-current" href="/">Home</HeaderLink>
