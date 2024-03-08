@@ -1,0 +1,48 @@
+---
+title: 'GitLab CI/CDでTerraform Moduleを呼び出すには'
+description: ''
+tags:
+ - 'GitLab'
+ - 'Terraform'
+ - 'CI/CD'
+ - 'DevOps'
+pubDate: 'May 10 2022'
+heroImage: '/blog-placeholder-2.jpg'
+---
+
+# はじめに
+本投稿ではTerraform Moduleにおいて別GitLabリポジトリを参照する場合におけるTipsを記載していきたいと思います。
+また、今回はTerraform Moduleの詳細については割愛させていただきますので、あらかじめご容赦下さい。
+
+# Terraform Moduleの設定
+Terraform Moduleの`source`にてGitLabレポジトリを指定する必要がありますがサンプルは以下となります。
+今回は例としてAWSリソースのVPCを作成するTerraform ResourceコードがGitLabリポジトリ**sample-terraform-vpc-module**に格納されているとします。
+また、該当リポジトリのcommitには**tag**がふられており、`ref`によって該当tagのcommitを参照するようになっています。
+
+```hcl
+module "network" {
+  source = "git::ssh://git@gitlab.com/<your_group>/sample-terraform-vpc-modules.git//terraform?ref=v0.0.1"
+}
+```
+
+詳細は[公式ドキュメント](https://developer.hashicorp.com/terraform/language/modules/sources#generic-git-repository)をご覧ください。
+
+# 対象リポジトリへのアクセス方法
+GitLab CIにてTerraform Moduleを適用する際には、その参照先のリポジトリ**sample-terraform-vpc-module**へのアクセスが必要となります（Checkoutするために）。
+そのため、権限が必要になるのですが、ここではその設定方法について説明していきたいと思います。
+Terraform Moduleの設定では、対象sourceを**ssh**によってアクセスするようにしています。
+しかしながら、GitLab CIではこれを**http**によるアクセスに変更してあげることで、GitLab CI上に定義された環境変数`CI_JOB_TOKEN`を利用して権限の問題を解消することができます。
+GitLab CI/CDにおける定義済み環境変数については[こちら](https://gitlab-docs.creationline.com/ee/ci/variables/predefined_variables.html)をご覧下さい。
+
+以下が`.gitlab-ci.yml`における該当部分のサンプルコードです。
+
+```yaml
+before_script:
+  - git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.com/<your_group>/sample-terraform-vpc-module.git".insteadOf ssh://git@gitlab.com/<your_group>/sample-terraform-vpc-module.git
+```
+
+今回は`before_script`にて設定を記述しているのですべてのJobで適用される形になりますが、ユースケースにより必要なJob内で個別に実行していただいても構わないと思います。
+
+# さいごに
+いかがだったでしょうか。分かってしまえば簡単かもしれませんが、個人的には大変学びになりました。
+誰かのお役に立てれば幸いです。
