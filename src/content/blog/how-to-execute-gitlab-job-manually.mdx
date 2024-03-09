@@ -1,0 +1,36 @@
+---
+title: 'GitLab CI/CDのJobを手動実行する'
+description: '本ポストでは、GitLab CIのJobを手動で実行するための設定方法などについて記載します。'
+tags:
+ - 'GitLab'
+ - 'CI/CD'
+ - 'DevOps'
+pubDate: 'May 21 2022'
+heroImage: '/blog-placeholder-3.jpg'
+---
+
+# はじめに
+今回はGitLab CI/CDにおけるJobの手動実行について投稿したいと思います。
+この手動実行の用途としては様々あると思います。
+例えば、Terraformを実行するCI/CDだとして、StageがTerraform PlanとTerraform Applyを実行するJobにそれぞれ分割されていた際に、Terraform Planの結果を確認した後、Terraform Applyを実行するなどではないでしょうか。
+このように、人手を介してJobの状況を確認して後続のJobを実行するか否か判断する場合に効果を発揮します。
+しかしながら、注意しなければならないのは、今回お伝えするのは手動実行であり、手動承認ではありません。
+そのため、Jobを許可や拒否するものでないということです。
+
+# Jobの手動実行
+対象のJobに対して手動実行する適用するには`when`において`manual`を指定するだけとなります。
+manual以外にも指定可能な値は種々ありますが、その紹介は[こちら](https://gitlab-docs.creationline.com/ee/ci/yaml/#when)のリンクをご覧いただければと思います。
+以下のコードはサンプルコードになります。
+
+```yml
+manual_approval:
+  script:
+    - echo 'Manual Execution'
+  when: manual
+  only:
+    - main
+```
+
+# さいごに
+いかがでしたでしょうか。今回はピンポイントの技術検証をお伝えいたしました。
+どこかの誰かのお役に立てれば幸いです。
