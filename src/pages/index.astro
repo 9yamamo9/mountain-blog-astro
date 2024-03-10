@@ -21,19 +21,23 @@ const posts = (await getCollection('blog')).sort(
 <Header />
 <main class="w-[960px]">
 	<section>
-		<ul class="flex flex-wrap gap-8 list-none m-0 p-0 max-md:gap-2">
+		<ul class="flex flex-col gap-8 list-none py-4 max-md:gap-2">
 			{
 				posts.map((post) => (
-					<li class="w-[calc(50%-1rem)] first:w-full first:mb-4 first:text-center max-md:text-center max-md:w-full">
-						<a class="group no-underline duration-[0.2s] ease-in-out block" href={`/blog/${post.slug}/`}>
-							<img class="first:w-full" width={720} height={360} src={post.data.heroImage} alt="" />
-							<h3
-								class="text-black leading-10 group-hover:text-red-700">{post.data.title}</h3>
-							<p class="text-gray-500 group-hover:text-red-700">
-								<FormattedDate date={post.data.pubDate} />
-							</p>
-							<div class="max-md:hidden">
-								<ContentTag contentTags={post.data.tags} />
+					<li class="w-[80%-1rem] max-md:text-center max-md:w-full">
+						<a
+							class="group flex duration-[0.2s] ease-in-out rounded-lg border-[1px] border-slate-400 hover:border-red-700 items-center divide-x"
+							href={`/blog/${post.slug}/`}>
+							<img class="flex-none w-[30%] p-2 rounded-2xl" src={post.data.heroImage} alt="" />
+							<div class="flex-1 px-4 py-2">
+								<h5
+									class="text-gray-600 font-bold leading-2 group-hover:text-red-700">{post.data.title}</h5>
+								<p class="text-sm text-gray-500 group-hover:text-red-700">
+									<FormattedDate date={post.data.pubDate} />
+								</p>
+								<div class="max-md:hidden">
+									<ContentTag contentTags={post.data.tags} />
+								</div>
 							</div>
 						</a>
 					</li>
