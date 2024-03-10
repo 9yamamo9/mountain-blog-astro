@@ -32,7 +32,8 @@ const posts = (await getCollection('blog')).sort(
 							<div class="flex-1 px-4 py-2">
 								<h5
 									class="text-gray-600 font-bold leading-2 group-hover:text-red-700">{post.data.title}</h5>
-								<p class="text-sm text-gray-500 group-hover:text-red-700">
+								<p class="text-sm text-gray-500 group-hover:text-red-700">{post.data.description}</p>
+								<p class="text-xs text-gray-500 text-right group-hover:text-red-700">
 									<FormattedDate date={post.data.pubDate} />
 								</p>
 								<div class="max-md:hidden">
