@@ -1,0 +1,90 @@
+---
+title: 'AWS CodeBuildでGitHub Repositoryをソースプロバイダーとする'
+description: '本ポストでは、AWS CodeBuildにおいてGitHub Repositoryをソースプロバイダーとしてアクセスする方法について記載します。'
+tags:
+ - 'GitHub Actions'
+ - 'Terraform'
+ - 'AWS'
+ - 'IAM Role'
+ - 'CI/CD'
+ - 'DevOps'
+pubDate: 'June 20 2022'
+heroImage: '/source-repository-personal-access-token-scope.png'
+---
+import { Image } from 'astro:assets'
+import personalAccessTokenScopeImage from '../assets/source-repository-personal-access-token-scope.png'
+
+# はじめに
+必要に迫られてAWS CodeBuildのソースプロバイダをGitHub Repositoryにしました。
+その際に実施した内容を備忘のために記載したいと思います。
+なお、AWS CodeBuildの構築とアクセストークンの設定についてはTerraformを使用しました。
+
+# 実施内容
+## GitHubにおけるPersonal Access Tokenの作成
+まずは、AWS CodeBuildがソースプロバイダとしてGitHubへ接続するためのアクセストークンとして**Personal Access Token**の作成が必要になります。
+以下の参考ドキュメントをもとに、Personal Access Tokenを作成しましたが、Scopeとしては以下の添付画像となります。これだけとなります。
+
+<Image class="mb-10" src={personalAccessTokenScopeImage} alt='Personal Access TokenのScope' />
+
+### 参考ドキュメント
+<ul>
+	<li>
+		<cite><a
+			href="https://docs.aws.amazon.com/ja_jp/codebuild/latest/userguide/access-tokens.html">CodeBuildでソースプロバイダーにアクセスする</a></cite>
+	</li>
+	<li>
+		<cite><a
+			href="https://docs.github.com/ja/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token">個人用アクセス トークンを管理する</a></cite>
+	</li>
+</ul>
+
+## TerraformによるAWS CodeBuildの作成
+次にAWS CodeBuild Projectを作成します。Terraformコードは以下の通りです。
+ここでソースプロバイダとしてGitHubのRepositoryを指定している部分は`source`内の`type`と`location`になります。
+
+```hcl
+resource "aws_codebuild_project" "this" {
+  name         = "github-integration-project"
+  service_role = "<role_arn>"
+  artifacts {
+    type = "NO_ARTIFACTS"
+  }
+  environment {
+    compute_type                = "BUILD_GENERAL1_SMALL"
+    image                       = "<ecr_uri>"
+    type                        = "LINUX_CONTAINER"
+    image_pull_credentials_type = "SERVICE_ROLE"
+  }
+  source {
+    type     = "GITHUB"
+    location = "https://github.com/<organization_name>/<repository_name>.git"
+    buildspec = jsonencode({
+      phases = {
+        build = {
+          commands = [
+            "ls -al"
+          ]
+        }
+      }
+      version = "0.2"
+    })
+  }
+}
+```
+
+## TerraformによるAWS CodeBuildへのアクセストークンの設定
+最後にAWS CodeBuild Projectが先に作成したPersonal Access Tokenを使用して指定したGitHun Repositoryへアクセスするための設定です。
+ここで注目するべきは、特にAWS CodeBuild Project自体を識別するための情報が存在しない点です。
+理解してしまうとなんてことはないのですが、本設定はリージョンに対してサーバタイプ(GitHub)ごとに1種類しか登録できないのです。
+
+```hcl
+resource "aws_codebuild_source_credential" "this" {
+  auth_type   = "PERSONAL_ACCESS_TOKEN"
+  server_type = "GITHUB"
+  token       = "<personal_access_token_value>"
+}
+```
+
+# さいごに
+いかがでしたでしょうか。これによりAWS CodeBuildはソースプロバイダをGitHub Repositoryとすることができます。
+どこかの誰かの参考になれば幸いです。
