@@ -1,0 +1,76 @@
+---
+title: 'IntelliJ IDEAにおけるLive Templatesでの快適なTerraformライフ'
+description: '本ポストでは、GitHub ActionsがAWSリソースに対する権限を取得するために必要なIAM Role周りのリソース作成について記載します。'
+tags:
+ - 'IntelliJ IDEA'
+ - 'Terraform'
+ - 'Live Templates'
+ - 'Developer Experience'
+pubDate: 'July 17 2022'
+heroImage: '/live-templates-setting-1.png'
+---
+
+import { Image } from 'astro:assets'
+import liveTemplatesSetting01 from '../assets/live-templates-setting-1.png'
+import liveTemplatesSetting02 from '../assets/live-templates-setting-2.png'
+import registerLiveTemplates from '../assets/register-live-template.png'
+import iamRoleLiveTemplates from '../assets/iam-role-live-templates.png'
+import resultLiveTemplates from '../assets/result-live-templates.png'
+
+# はじめに
+僕はIaC(Infrastructure as Code)については多くの場合に関してTerraformを利用します。
+そのような中で同じようなコードを書くことが多々あります。AWS Lambda Functionを作成する際のAWS IAM Roleなどはその最たる例かもしれません。
+今までは恥ずかしい話ですが、粛々と同じようなコードを書き続けていました。皆様はこのような場合にスニペットを用意したいと思います。そして、IntelliJ IDEAには**Live Templates**という機能があります。
+
+# Live Templatesの設定
+## Templateグループの作成
+IntelliJ IDEAには多くのプログラミング言語・ツールに対応したTemplateグループが存在していますが、Terraform用のTemplateグループは存在しませんでした。
+そのために、まずは以下の画面キャプチャのように **[preference]** > **[Editor]** > **[Live Templates]** に移動して、Terraform用のTemplateグループの作成を実施します。
+
+<Image class="mb-10" src={liveTemplatesSetting01} alt='Live Templatesの設定画面 01' />
+
+<Image class="mb-10" src={liveTemplatesSetting02} alt='Live Templatesの設定画面 02' />
+
+## Templateの登録
+Terraform用Templateグループが作成できたら、早速Templateを登録していきます。
+Templateグループの新規作成と同様の画面から、以下の画面を参考に今度は**Live Template**を選択します。
+
+<Image class="mb-10" src={registerLiveTemplates} alt='Live Templatesの登録' />
+
+Live Templateの設定について、入力しなければならないのは**Abbreviation**、**Template text**、**Define**です。なお、**Description**という該当Live Templateの説明文を記載する項目がありますが、こちらはOptionalですので特に設定しなくても問題ありません。
+
+<Image class="mb-10" src={iamRoleLiveTemplates} alt='IAM Role作成のLive Templates' />
+
+まずは**Abbreviation**ですが、これは呼び出すときの名前になります。
+例えば今回の例では、Lambda関数用のIAM Roleを作成するためのLive Templatesを想定しているため、IAM_Role_Lambdaという値にしています。
+次に、**Template text**ですが、これがLive Templatesを利用した際に記述されるコードとなります。僕の場合には以下の内容を記載しています。
+
+```hcl
+resource "aws_iam_role" "" {
+  name = ""
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = ["sts:AssumeRole"]
+        Principal = {
+          Service = "lambda.amazonaws.com"
+        }
+      }
+    ]
+  })
+  managed_policy_arns = ["arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"]
+}
+```
+最後に、**Define**ですが、これは本Live Templatesを呼び出すことのできる言語などを設定することになります。
+今回の対象はTerraformとなるため、**Other**を選択しますが、言語ごとに設定できるので皆さまの用途に応じて選択してください。
+
+## すべての設定を完了
+前述の設定を完了すると以下のようにsuggestionされます。選択いただくことで、**Template text**で設定した内容が記述されます。
+
+<Image class="mb-10" src={resultLiveTemplates} alt='Live Templatesの実行結果' />
+
+# さいごに
+いかがでしたでしょうか。今回は少し開発環境におけるTipsを記載させていただきました。
+皆さまのお役に少しでも立てれば幸いです。
