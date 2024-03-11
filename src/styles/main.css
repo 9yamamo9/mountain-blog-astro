@@ -69,10 +69,6 @@
         @apply text-blue-700
     }
 
-    p {
-        @apply mb-4
-    }
-
     textarea {
         @apply w-full text-base
     }
