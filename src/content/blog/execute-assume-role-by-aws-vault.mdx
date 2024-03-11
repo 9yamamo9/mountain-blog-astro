@@ -1,0 +1,113 @@
+---
+title: 'AWS Vaultを利用してAssume Roleする'
+description: '本ポストでは、AWS Vaultを利用した場合のAssume Roleの方法について記載します。'
+tags:
+ - 'AWS'
+ - 'Assume Role'
+ - 'AWS Vault'
+ - 'IAM'
+pubDate: 'October 13 2022'
+heroImage: '/execute-assume-role-by-aws-vault.png'
+---
+
+# はじめに
+IAM Userを利用してAWSマネジメントコンソールにアクセスしたり、AWS CLIを実行している人がいらっしゃるかもしれません。
+ただし、IAM Userに強い権限をもったIAM Policyをアタッチするのは少し怖いです。
+AWS CLIを利用している場合にはアクセスキーとシークレットキーを払い出していますし、これらが第三者へ漏洩してしまう可能性もあります。
+そこで、IAM UserにアタッチするIAM Policyの権限はできる限り最小限に抑えたいです。
+そして、Assume Roleによって必要な権限をもつIAM Roleへスイッチする方が良いかと思います。
+今回のブログでは、IAM Userの作成とAWS Vaultを利用したAssume Roleの実施についてまとめます。
+なお、AWS Vaultのインストールについては[こちら](https://github.com/99designs/aws-vault#installing)を参考にしてください。
+
+# IAM Userの作成
+基本的に、IAM UserにはMFAを有効化するための権限のみを許可したPolicyを設定します。
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "VisualEditor0",
+            "Effect": "Allow",
+            "Action": [
+                "iam:EnableMFADevice",
+                "iam:ListUsers",
+                "iam:CreateVirtualMFADevice",
+                "iam:ListMFADevices",
+                "iam:GetUser"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
+```
+
+# IAM User Groupの作成
+上記で作成したIAM Userに対してAssume Roleを許可するPolicyは、該当PolicyがアタッチされたIAMのUser Groupを作成し、そこへIAM Userを所属させることにします。
+User Groupに設定するPolicyは以下の通りです。
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "VisualEditor0",
+            "Effect": "Allow",
+            "Action": "sts:AssumeRole",
+            "Resource": "arn:aws:iam::<account_id>:role/<role_name>",
+            "Condition": {
+                "BoolIfExists": {
+                    "aws:MultiFactorAuthPresent": "true"
+                }
+            }
+        }
+    ]
+}
+```
+
+`Resource`ではAssume Roleの対象となるIAM RoleのARNを指定しています。
+適切なPolicyを付与したIAM Roleを作成してください。
+また、`Condition`句では、MFAが有効になっていることを確認するものです。
+
+# IAM UserのAWS CredentialsをAWS Vaultに格納する
+以下のコマンドを実行することにより、AWS VaultにAWS Credentialsが格納されます。
+
+```bash
+aws-vault add <profile_name>
+Enter Access Key Id: ABDCDEFDASDASF
+Enter Secret Key: %%%
+```
+
+**profile_name** には、該当IAM Userを識別するためのプロファイル名を任意で設定することができます。
+例えば、devとした場合には、このコマンドの実行完了後に以下の記述が**Config**ファイルに追記されます。
+
+```bash
+[profile dev]
+```
+
+# AWS ConfigファイルにAssume Role用のプロファイルを記述する
+Assume Roleの情報をAWS Configファイルに記述します。
+`source_profile`は先に作成したIAM Userのプロファイルを指定し、対象となるIAM RoleのARNやMFAシリアルを設定します。
+
+```bash
+[profile admin]
+source_profile=<profile_name>
+role_arn=arn:aws:iam::<account_id>:role/<role_name>
+mfa_serial=arn:aws:iam::<account_id>:mfa/<iam_user_name>
+```
+
+# 動作確認
+最後に、設定に対して正常に動作するか確認します。
+
+```bash
+aws-vault exec admin -- aws sts get-caller-identity
+Enter MFA code for arn:aws:iam::<account_id>:mfa/<iam_user_name>: ******
+{
+    "UserId": "<user_id>",
+    "Account": "<account_id>",
+    "Arn": "arn:aws:sts::<account_id>:assumed-role/<role_name>/<session_token>"
+}
+```
+
+# さいごに
+いかがでしたでしょうか。これを読んでいただいた人のお役に立てれば幸いです。
