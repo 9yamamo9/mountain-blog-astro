@@ -1,0 +1,107 @@
+---
+title: 'Step FunctionsによるCodeBuildの呼び出しと成功・失敗処理をハンドリングする'
+description: '本ポストでは、CodeBuildをStep Functionsで状態管理する方法を記載します。状態管理では、ステータスとして成功・失敗が発生しますが、そのハンドリング方法についても説明します。'
+tags:
+ - 'AWS'
+ - 'Step Functions'
+ - 'CodeBuild'
+ - 'Terraform'
+ - 'State Machine'
+ - 'CI/CD'
+ - 'DevOps'
+pubDate: 'September 30 2022'
+heroImage: '/handle-success-failed-on-codebuild-by-stepfunctions.png'
+---
+
+import { Image } from 'astro:assets'
+import architecture from '../assets/handle-success-failed-on-codebuild-by-stepfunctions.png'
+
+# はじめに
+Step FunctionsからCodeBuildを呼び出すことができ、CodeBuildで実施した処理の成功・失敗に応じたハンドリングを行うことができます。
+そして、Step Functionsを利用することでCodeBuild実行に使用した環境変数やその他情報を後続の処理に渡すことも可能となります。
+今回の投稿では、上記を実現するためのアーキテクチャなどを紹介できればと思います。よろしければ、最後までご覧いただければ幸いです。
+
+# 構成図
+以下は今回の簡単なアーキテクチャとなります。
+
+<Image class="mb-10" src={architecture} alt='アーキテクチャーイメージ' />
+
+# Terraformコード
+アーキテクチャでは、AWSリソースとしてStep Functions、CodeBuild、各種Lambda関数がありますが、今回はStep Functionsに焦点を絞ってお伝えします。
+
+以下は、Step Functionsの構築におけるTerraformコードを記載します。
+大部分はState Machineの記述になります。ブロックごとに説明していきます。
+
+```hcl
+resource "aws_sfn_state_machine" "example" {
+  name     = "example-state-machine"
+  role_arn = "<iam_role_arn>"
+  definition = jsonencode({
+    StartAt = "StartCodeBuild"
+    States = {
+      StartCodeBuild = {
+        Type     = "Task"
+        Resource = "arn:aws:states:::codebuild:startBuild.sync"
+        Parameters = {
+          ProjectName = "<codebuild_project_name>",
+          EnvironmentVariablesOverride = [
+            {
+              Name      = "HOGE",
+              "Value.$" = "$.Hoge",
+              Type      = "PLAINTEXT",
+            },
+            {
+              Name      = "FUGA",
+              "Value.$" = "$.Fuga",
+              Type      = "PLAINTEXT",
+            }
+          ]
+        },
+        ResultSelector = {
+          "EnvironmentVariables.$" = "$.Build.Environment.EnvironmentVariables"
+        }
+        Next = "SuccessNotification",
+        Catch = [
+          {
+            ErrorEquals = ["States.TaskFailed"],
+            Next        = "FailedNotification",
+          }
+        ]
+      },
+      FailedNotification = {
+        Type     = "Task"
+        Resource = "<failed_notification_function_arn>"
+        End      = true
+      },
+      SuccessNotification = {
+        Type     = "Task",
+        Resource = "<success_notification_function_arn>"
+        End      = true
+      },
+    }
+  })
+}
+```
+
+まずは、CodeBuildを呼び出すState部分のTerraformコードについて解説します。
+該当部分は`StartCodeBuild`のブロックとなります。まずは、Resourceですがこちらは`arn:aws:states:::codebuild:startBuild.sync`という値になっています。
+これはCodeBuildを呼び出す設定値なのですが、**同期呼び出し**であることを意味します。この設定により、[CodeBuildの処理が完了するまで待機](https://docs.aws.amazon.com/ja_jp/step-functions/latest/dg/connect-to-resource.html#connect-sync)します。
+
+`Parameters`では、CodeBuildのAPIのリクエストパラメータを設定していきます。
+上記のTerraformコード例では、実際に呼び出すCodeBuildのProject名、Project上で利用する環境変数を指定しています。
+その他のパラメータについては[こちら](https://docs.aws.amazon.com/ja_jp/step-functions/latest/dg/connect-codebuild.html)をご覧ください。
+特に、環境変数を設定している`EnvironmentVariablesOverride`を見ていきます。
+Nameは環境変数名、Typeは環境変数のデータ形式をそれぞれ表しています。
+ここで注目すべき点は、`"Value.$" = "$.Hoge"`や`"Value.$" = "$.Fuga"`といった箇所です。
+本来は、**"Value" = "指定したい任意の値"** と記述するところなのですが、今回のケースでは、環境変数として設定する値をStep Functions起動時の入力パラメータから指定するためにこのような記載になっています。
+また、`ResultSelector`では、CodeBuildが行った処理結果の一部を抽出しています。
+
+最後に、CodeBuildの処理の成功・失敗に沿ったステートの指定を見ていきます。
+処理が成功した場合に対しては、単純に`Next`を利用して、成功時の処理を実施するステートを指定するだけです。
+一方、失敗した場合に対しては`Catch`を利用します。上記のTerraformコードでは、失敗時の[Errorの種類](https://docs.aws.amazon.com/ja_jp/step-functions/latest/dg/concepts-error-handling.html#error-handling-error-representation)とその際に処理を実施するステートを指定します。
+Errorの際にはその原因や入力された値などが次のステートへ渡されます。
+
+# さいごに
+いかがでしたでしょうか。
+今回はStep FunctionsでCodeBuildを呼び出し際の処理の成功・失敗に対するハンドリングを適用するためのState Machineについて記載しました。
+どこかの誰かの役に立てば幸いです。
