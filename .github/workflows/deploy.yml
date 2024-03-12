@@ -1,0 +1,30 @@
+name: 'Cloudflare Pages Deploy'
+
+on:
+  push:
+    branches:
+      - 'deploy'
+
+jobs:
+  terraform:
+    name: 'Terraform Plan And Apply'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: 'Terraform Setup'
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.7.4'
+      - name: 'Terraform Plan'
+        run: echo 'Execute Terraform Plan'
+      - name: 'Terraform Apply'
+        run: echo 'Execute Terraform Apply'
