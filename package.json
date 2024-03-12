@@ -10,6 +10,7 @@
     "preview": "node_modules/.bin/astro preview",
     "astro": "node_modules/.bin/astro"
   },
+  "packageManager": "yarn@1.22.21",
   "dependencies": {
     "@astrojs/check": "^0.5.6",
     "@astrojs/mdx": "^2.1.1",
