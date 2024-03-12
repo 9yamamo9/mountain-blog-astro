@@ -1,9 +1,10 @@
 ---
+import { Skill } from '../types/Skill'
 const { skillSet } = Astro.props
 ---
 
 <div>
-	{skillSet.map(skill => (
+	{skillSet.map((skill: Skill) => (
 		<span
 			class="bg-gray-200 text-gray-700 text-md me-3 p-0.5 m-1 rounded-full  hover:text-red-700">
 		  {skill.Name}: {skill.Years}年
