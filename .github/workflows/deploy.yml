@@ -15,7 +15,7 @@ jobs:
         shell: bash
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-      TERRAFORM_API_TOKEN: ${{ secrets.TERRAFORM_API_TOKEN }}
+      TF_TOKEN_app_terraform_io: ${{ secrets.TERRAFORM_API_TOKEN }}
 
     steps:
       - name: 'Checkout'
@@ -27,7 +27,7 @@ jobs:
         with:
           terraform_version: '1.7.4'
       - name: 'Terraform Init'
-        run: terraform -chdir=./terraform init -var="cloudflare_api_token=$CLOUDFLARE_API_TOKEN" -var="terraform_api_token=$TERRAFORM_API_TOKEN"
+        run: terraform -chdir=./terraform"
       - name: 'Terraform Plan'
         run: echo 'Execute Terraform Plan'
       - name: 'Terraform Apply'

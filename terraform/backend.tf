@@ -7,6 +7,5 @@ terraform {
     workspaces {
       name = "mountain-blog-astro"
     }
-    token = var.terraform_api_token
   }
 }
