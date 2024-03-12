@@ -6,6 +6,7 @@
     "dev": "node_modules/.bin/astro dev",
     "start": "node_modules/.bin/astro dev",
     "build": "node_modules/.bin/astro check && astro build",
+    "deploy": "yarn install && node_modules/.bin/astro check && astro build",
     "preview": "node_modules/.bin/astro preview",
     "astro": "node_modules/.bin/astro"
   },
