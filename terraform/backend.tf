@@ -1,9 +1,7 @@
 terraform {
-  required_version = "~> 1.7.0"
-
-  backend "remote" {
-    hostname     = "app.terraform.io"
+  cloud {
     organization = "Mt-Three-Trees"
+
     workspaces {
       name = "mountain-blog-astro"
     }
