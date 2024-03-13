@@ -9,7 +9,7 @@ import ContentTag from '../components/ContentTag.astro'
 
 const posts = (await getCollection('blog')).sort(
 	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
-)
+).filter((post) => !post.data.editing)
 ---
 
 <!doctype html>
