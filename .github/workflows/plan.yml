@@ -1,15 +1,19 @@
-name: 'Cloudflare Pages Deploy'
+name: 'Cloudflare Pages Plan'
 
 on:
-  push:
+  pull_request:
+    types:
+      - opened
+      - reopened
     branches:
-      - 'deploy'
+      - main
+      - deploy
     paths:
       - '**.tf'
 
 jobs:
   terraform:
-    name: 'Terraform Plan And Apply'
+    name: 'Terraform Plan'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -32,5 +36,3 @@ jobs:
         run: terraform -chdir=./terraform init
       - name: 'Terraform Plan'
         run: terraform -chdir=./terraform plan -var "cloudflare_api_token=${CLOUDFLARE_API_TOKEN}" -var "cloudflare_account_id=$CLOUDFLARE_ACCOUNT_ID"
-      - name: 'Terraform Apply'
-        run: terraform -chdir=./terraform apply -auto-approve -var "cloudflare_api_token=${CLOUDFLARE_API_TOKEN}" -var "cloudflare_account_id=$CLOUDFLARE_ACCOUNT_ID"
