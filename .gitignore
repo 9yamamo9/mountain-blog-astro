@@ -134,6 +134,9 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
+# Terraform
+**/.terraform
+
 # Intellij IDEA
 **/.idea
 
