@@ -1,0 +1,38 @@
+name: 'Cloudflare Pages Plan'
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+    branches:
+      - main
+      - deploy
+    paths:
+      - '**.tf'
+
+jobs:
+  terraform:
+    name: 'Terraform Plan'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      TF_TOKEN_app_terraform_io: ${{ secrets.TERRAFORM_API_TOKEN }}
+
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: 'Terraform Setup'
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.7.4'
+      - name: 'Terraform Init'
+        run: terraform -chdir=./terraform init
+      - name: 'Terraform Plan'
+        run: terraform -chdir=./terraform plan -var "cloudflare_api_token=${CLOUDFLARE_API_TOKEN}" -var "cloudflare_account_id=$CLOUDFLARE_ACCOUNT_ID"
