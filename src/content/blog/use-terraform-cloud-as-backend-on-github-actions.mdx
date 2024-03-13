@@ -1,5 +1,5 @@
 ---
-title: 'Terraform CloudをBackendとしてのみ利用してGitHub ActionsでTerraformを実行する'
+title: 'Terraform CloudをBackendとしてのみ利用した際のGitHub ActionsでのTokenの扱い方'
 description: '本ポストでは、Terraform CloudをBackendとしてのみ利用してGitHub Actions内でTerraformを実行する方法を記載します。Terraform Cloudに対するAPI Tokenの管理方法などに焦点を絞っていきます。'
 tags:
  - 'GitHub Actions'
@@ -8,6 +8,85 @@ tags:
  - 'CI/CD'
  - 'DevOps'
 pubDate: 'March 13 2024'
-heroImage: '/blog-placeholder-4.jpg'
-editing: true
+heroImage: '/terraform-primary-logo.png'
+editing: false
 ---
+
+# はじめに
+このブログサイトはCloudflare Pagesを使用してホストされています。
+このCloudflare Pagesの構成管理についてはTerraformを利用しており、特定のブランチに応じてトリガーされるGitHub Actions WorkflowでTerraform PlanやApplyが実行されます。
+Terraformを実行するにあたっては、Stateファイルを格納しておいたり、Stateをロックするための[Backend](https://developer.hashicorp.com/terraform/language/settings/backends/configuration)なるコンポーネントが必要になります。
+今回はBackend（のみ）をTerraform Cloudにしました。
+Terraform Cloudに対するアクセスには専用のAPI Tokenが必要となります。
+このAPI Tokenをどのように扱っていくのかを記載します。
+
+# API Tokenの取り扱い
+Terraform CloudへアクセスするためのAPI TokenをGitHub Actionsで扱う方法を記載します。
+まず、このAPI Token自体の生成方法は[公式ドキュメント](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/api-tokens#team-api-tokens)が参考になります。
+生成されたAPI Tokenの扱い方を見ていく前に、BackendとしてTerraform Cloudを指定する方法を記述します。
+
+## Terraform CloudをBackendに指定する
+通常は以下のコードのように`remote`を利用してTerraform Cloudを指定することができます。
+
+```hcl
+terraform {
+  backend "remote" {
+    hostname     = "app.terraform.io"
+    organization = "<your_organization_name>"
+
+    workspaces {
+      name = "<your_workspace_name>"
+    }
+  }
+}
+```
+
+ただし、[Terraform Cloud Configuration](https://developer.hashicorp.com/terraform/language/settings/terraform-cloud)にもある通り、次のようなコードでも対応できます。
+コード内には`hostname`が存在していませんが、デフォルト値として`app.terraform.io`が設定されているため、省略しています。
+Terraform Enterpriseをご契約されている場合には、適宜記載してください。
+
+```hcl
+terraform {
+  cloud {
+    organization = "<your_organization_name>"
+
+    workspaces {
+			name = "<your_workspace_name>"
+    }
+  }
+}
+```
+
+## Tokenの指定方法
+Terraform CloudのTokenの指定方法にはいくつかの方法があります。ひとつは`terraform login`コマンドの利用です。ただし、このコマンドは対話式に実行されるため、GitHub Actionsで利用するには適当ではありません。
+また、もうひとつは以下のように`credentials`ブロックを利用する方法があります。しかしながら、このTokenの値をコードとして格納しなければならないので、機密情報の取り扱いという観点では不安が残ります。
+
+```hcl
+credentials "app.terraform.io" {
+  token = "xxxxxx.atlasv1.zzzzzzzzzzzzz"
+}
+```
+
+## Tokenを環境変数に設定する
+そこで今回は、[ドキュメント](https://developer.hashicorp.com/terraform/cli/config/config-file#environment-variable-credentials)にもあるようにTokenを環境変数として設定する方法を実践します。
+環境変数名は`TF_TOKEN_`をプレフィックスとして、その後ろにドメイン名を付け加えます。
+今回は`app.terraform.io`がドメイン名になるので、環境変数名は`TF_TOKEN_app_terraform_io`となります。
+この環境変数にTokenの値を設定することで、Terraform Cloudへアクセスすることができます。
+
+# GitHub Actionsでの環境変数の設定
+GitHub Actionsでの環境変数の設定方法自体は本ポストの内容からは若干それるので、簡単に記述していきます。
+前提条件として、すでにTokenはリポジトリのSecretsに`TF_API_TOKEN`として格納されていることとします。
+すると、環境変数を設定するコードとして次のようになります。参考までに。
+
+```yaml
+jobs:
+	terraform:
+		env:
+			TF_TOKEN_app_terraform_io: ${{ secrets.TF_API_TOKEN }}
+```
+
+これで設定は完了です。
+
+# さいごに
+いかがでしたでしょうか。API TokenのようなCredentialの扱いには神経を使います。
+そのような中で、手段のひとつとして参考になれば幸いです。
