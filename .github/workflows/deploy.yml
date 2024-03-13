@@ -30,6 +30,6 @@ jobs:
       - name: 'Terraform Init'
         run: terraform -chdir=./terraform init
       - name: 'Terraform Plan'
-        run: terraform -chdir=./terraform plan -var 'cloudflare_api_token=$CLOUDFLARE_API_TOKEN' -var 'cloudflare_account_id=$CLOUDFLARE_ACCOUNT_ID'
+        run: terraform -chdir=./terraform plan -var "cloudflare_api_token=${CLOUDFLARE_API_TOKEN}" -var "cloudflare_account_id=$CLOUDFLARE_ACCOUNT_ID"
       - name: 'Terraform Apply'
         run: echo 'Execute Terraform Apply'
