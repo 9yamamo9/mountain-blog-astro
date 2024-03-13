@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - 'deploy'
-      - 'feature-actions'
 
 jobs:
   terraform:
@@ -32,4 +31,4 @@ jobs:
       - name: 'Terraform Plan'
         run: terraform -chdir=./terraform plan -var "cloudflare_api_token=${CLOUDFLARE_API_TOKEN}" -var "cloudflare_account_id=$CLOUDFLARE_ACCOUNT_ID"
       - name: 'Terraform Apply'
-        run: echo 'Execute Terraform Apply'
+        run: terraform -chdir=./terraform apply -auto-approve -var "cloudflare_api_token=${CLOUDFLARE_API_TOKEN}" -var "cloudflare_account_id=$CLOUDFLARE_ACCOUNT_ID"
