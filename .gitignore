@@ -134,6 +134,9 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
+# Environment Variable
+**/.envrc
+
 # Terraform
 **/.terraform
 
