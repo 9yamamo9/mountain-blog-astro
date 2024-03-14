@@ -44,7 +44,7 @@ resource "cloudflare_pages_project" "this" {
       deployments_enabled           = true
       owner                         = "9yamamo9"
       pr_comments_enabled           = true
-      preview_branch_excludes       = ["main", "deploy"]
+      preview_branch_excludes       = ["*"]
       preview_branch_includes       = ["preview"]
       preview_deployment_setting    = "all"
       production_branch             = "main"
