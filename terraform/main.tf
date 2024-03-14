@@ -46,7 +46,7 @@ resource "cloudflare_pages_project" "this" {
       pr_comments_enabled           = true
       preview_branch_excludes       = ["*"]
       preview_branch_includes       = ["preview"]
-      preview_deployment_setting    = "all"
+      preview_deployment_setting    = "custom"
       production_branch             = "main"
       production_deployment_enabled = true
       repo_name                     = "mountain-blog-astro"
