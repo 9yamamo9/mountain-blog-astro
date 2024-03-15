@@ -10,6 +10,7 @@ on:
       - deploy
     paths:
       - '**.tf'
+      - '**.yml'
 
 jobs:
   terraform:
