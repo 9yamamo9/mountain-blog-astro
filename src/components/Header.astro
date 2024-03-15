@@ -5,22 +5,22 @@ import { SITE_TITLE } from '../consts'
 
 <header class="bg-gray-300 p-3">
 	<nav class="flex items-center content-between">
-		<h1 class="font-bold text-5xl"><a class="p-1 text-black hover:text-inherit" href="/">{SITE_TITLE}</a></h1>
-		<div class="internal-links flex-1 ml-6">
-			<HeaderLink class="text-gray-700 text-3xl hover:text-current" href="/">Home</HeaderLink>
-			<HeaderLink class="text-gray-700 text-3xl hover:text-current" href="/about">About</HeaderLink>
+		<h1 class="text-4xl font-bold"><a class="p-1 text-black hover:text-inherit" href="/">{SITE_TITLE}</a></h1>
+		<div class="ml-3 flex-1 max-md:text-end">
+			<HeaderLink class="text-gray-700  hover:text-current px-2" href="/">Home</HeaderLink>
+			<HeaderLink class="text-gray-700  hover:text-current px-2" href="/about">About</HeaderLink>
 		</div>
-		<div class="max-md:hidden">
-			<a class="mr-2 text-gray-700 no-underline hover:text-current"
+		<div class="flex gap-5 max-md:hidden">
+			<a class="text-gray-700 hover:text-current"
 				 href="https://www.linkedin.com/in/yuta-yamamori-786883175/" target="_blank">
-				<span class="i-ri-linkedin-fill w-9 h-9" />
+				<span class="i-ri-linkedin-fill w-7 h-7" />
 			</a>
-			<a class="mr-2 text-gray-700 no-underline hover:text-current" href="https://twitter.com/9yamamo9" target="_blank">
-				<span class="i-ri-twitter-x-fill w-9 h-9" />
+			<a class="text-gray-700 hover:text-current" href="https://twitter.com/9yamamo9" target="_blank">
+				<span class="i-ri-twitter-x-fill w-7 h-7" />
 			</a>
-			<a class="text-gray-700 no-underline hover:text-current" href="https://github.com/9yamamo9/mountain-blog-astro"
+			<a class="text-gray-700 hover:text-current" href="https://github.com/9yamamo9/mountain-blog-astro"
 				 target="_blank">
-				<span class="i-ri-github-fill w-9 h-9" />
+				<span class="i-ri-github-fill w-7 h-7" />
 			</a>
 		</div>
 	</nav>

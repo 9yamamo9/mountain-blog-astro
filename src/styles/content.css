@@ -4,19 +4,19 @@
 
 @layer base {
     h1 {
-        @apply text-4xl font-bold
+        @apply text-3xl font-bold max-md:text-2xl
     }
 
     h2 {
-        @apply text-3xl font-bold
+        @apply text-2xl font-bold max-md:text-xl
     }
 
     h3 {
-        @apply text-2xl font-bold
+        @apply text-xl font-bold max-md:text-lg
     }
 
     h4 {
-        @apply text-xl font-bold
+        @apply text-lg font-bold max-md:text-base
     }
 
     p {
@@ -25,6 +25,10 @@
 
     pre {
         @apply mt-4 mb-4
+    }
+
+    span {
+        @apply text-base
     }
 
     a {
