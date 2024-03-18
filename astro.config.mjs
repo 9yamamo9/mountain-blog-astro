@@ -6,6 +6,6 @@ import embeds from 'astro-embed/integration'
 
 // https://astro.build/config
 export default defineConfig({
-	site: 'https://example.com',
+	site: 'https://mountain-forest-blog.pages.dev',
 	integrations: [embeds(), mdx(), sitemap(), tailwind()]
 })
