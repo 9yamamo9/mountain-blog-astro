@@ -40,14 +40,17 @@ const LinkCard = (props: LinkCardProps) => {
 	return (
 		<>
 			{ogpMap ? (
-				<div className="flex flex-row items-center m-2 border border-gray-400 rounded-3xl max-md:flex-col max-md:gap-3">
+				<a
+					className="flex flex-row items-center m-2 border border-gray-400 rounded-3xl max-md:flex-col max-md:gap-3"
+					href={ogpMap.get('og:url')}>
 					<img className="w-1/3 m-0 p-0 rounded-2xl max-md:w-full" src={ogpMap?.get('og:image')} />
-					<div className="mx-2 p-0">
-						<h4 className="text-gray-500 m-0 p-0 leading-none">{ogpMap.get('og:title')}</h4>
-						<a className="text-base m-0 p-0 leading-none ">{ogpMap.get('og:url')}</a>
-						<p className="text-sm text-gray-400 m-0 p-0 leading-none">{ogpMap.get('og:description')}</p>
+					<div className="px-3 w-2/3 max-md:w-full max-md:mx-3">
+						<h4 className="text-gray-500 leading-none">{ogpMap.get('og:title')}</h4>
+						<p
+							className="m-0 text-base text-gray-500 whitespace-nowrap overflow-hidden overflow-ellipsis leading-none ">{ogpMap.get('og:url')}</p>
+						<p className="text-sm text-gray-400 leading-none">{ogpMap.get('og:description')}</p>
 					</div>
-				</div>
+				</a>
 			) : (
 				<>
 					<a>{url}</a>
