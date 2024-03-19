@@ -2,8 +2,6 @@ import { useEffect, useState } from 'react'
 
 type LinkCardProps = {
 	url: string
-	title: string
-	description: string
 }
 
 const LinkCard = (props: LinkCardProps) => {
