@@ -52,4 +52,11 @@ resource "cloudflare_pages_project" "this" {
       repo_name                     = "mountain-blog-astro"
     }
   }
+
+  lifecycle {
+    ignore_changes = [
+      build_config["web_analytics_tag"],
+      build_config["web_analytics_token"],
+    ]
+  }
 }
