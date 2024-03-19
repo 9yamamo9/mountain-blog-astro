@@ -1,0 +1,94 @@
+---
+title: 'Astro上でReactによるインタラクティブなコンポーネント：Link Cardを呼び出す'
+description: '本ポストでは、対象URLのOGP(Open Graph Protocol)情報を取得して、その情報からCardコンポーネントを作成する方法を記載します。また、このコンポーネントはReactのHooksを使用していますが、このようなインタラクティブなコンポーネントをAstroで呼び出す方法も合わせてご紹介します。'
+tags:
+ - 'Astro'
+ - 'React'
+ - 'React Hooks'
+ - 'Open Graph Protocol'
+ - 'Frontend'
+pubDate: 'March 19 2024'
+heroImage: '/astro-logo-dark.png'
+editing: false
+---
+
+import LinkCard from '../../components/LinkCard.tsx'
+
+# はじめに
+このポストでは、ReactコンポーネントでのLink Cardの作成方法とAstro上での呼び出し方を記載していきます。
+なお、Link Cardとは下のようなものとして指しています。
+
+<LinkCard url="https://mountain-forest-blog.pages.dev/" client:load />
+
+# Link Cardコンポーネントの実装
+## Reactを統合する
+Astroは様々なUIフレームワークに対応していますが、デフォルトでは統合されていないため利用することができません。
+そこでまずは、AstroにReactを導入するところから始める必要があるかもしれません。
+その場合は、rootディレクトリで以下のコマンドを実行します。
+このコマンドを実行することで、Reactを利用するための最小限の準備がすべて整います。
+
+```bash
+$ yarn astro add react
+```
+
+## Componentを実装する
+上で下準備が完了したので実際にコンポーネントを実装していきます。実装の全体像は[GitHubリポジトリ](https://github.com/9yamamo9/mountain-blog-astro/blob/main/src/components/LinkCard.tsx)をご確認ください。
+ここでは、要点に絞っていきたいと思います。
+
+### 対象URLのOGP情報を取得する
+以下のコードはOGP情報を取得している部分に絞ったコードの記載になっています。
+基本的な考え方としては、まず対象となるURLのHTMLを取得します。
+次に`head`内の`meta`要素を探し出して、OGPに関わる属性である`propertry`と`content`を抽出しています。
+
+```typescript
+const LinkCard = (props: LinkCardProps) => {
+	const { url } = props
+	const [ogpMap, setOgpMap] = useState<Map<string, string>>()
+
+	useEffect(() => {
+		const fetchMetaData = (async () => {
+			const response = await fetch(new URL(url))
+			const html = await response.text()
+			return new DOMParser().parseFromString(html, 'text/html')
+		})()
+
+		fetchMetaData.then((document) => {
+			const map = new Map<string, string>()
+
+			document.querySelector('head')?.querySelectorAll('meta').forEach((element) => {
+				const property = element.attributes.getNamedItem('property')
+				const content = element.attributes.getNamedItem('content')
+
+				if (property && property.value.includes('og:') && content) {
+					map.set(property.value, content.value)
+				}
+			})
+
+			setOgpMap(map)
+		}).catch((error) => {
+			console.log('Failed to fetch head: ', error)
+			return
+		})
+
+	}, [props])
+	... // ここからは下は描画要素が記載されています。
+}
+```
+
+ここで取得できた`ogpMap`を利用してコンポーネントの要素を記述するのですが、その実装部分は単純なところだと思うので割愛します。
+
+# コンポーネントの呼び出し
+AstroファイルやMDXファイルでこのコンポーネントを呼び出すためには、次のコードのように`client:*`ディレクティブを利用する必要があります。
+
+```typescript
+<LinkCard url="https://docs.astro.build/ja/basics/layouts/" client:load />
+```
+
+詳しくは、以下の公式ドキュメントをご覧ください。
+
+<LinkCard url="https://docs.astro.build/ja/guides/framework-components/#%E3%82%A4%E3%83%B3%E3%82%BF%E3%83%A9%E3%82%AF%E3%83%86%E3%82%A3%E3%83%96%E3%81%AA%E3%82%B3%E3%83%B3%E3%83%9D%E3%83%BC%E3%83%8D%E3%83%B3%E3%83%88" client:load />
+
+# さいごに
+いかがでしたでしょうか。今回のLink Cardは突貫で作成した感が否めません。OGPの取得ロジックも甘いですし、Xの独自対応も行っていません。
+個人的には、せっかくAstroを利用しているのにこのLink Cardコンポーネントはクライアントサイドで描画されている点です。
+ここのあたりをもう少し深堀りしてみたいと思いました。
