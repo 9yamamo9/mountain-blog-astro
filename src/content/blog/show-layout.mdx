@@ -4,10 +4,59 @@ description: '各種独自コンポーネントのスタイルを確認するた
 tags:
  - 'Layout'
 pubDate: 'January 06 3000'
+updatedDate: 'September 07 3000'
 heroImage: '/yamamori-rice.jpg'
 editing: true
 ---
 
 import LinkCard from '../../components/LinkCard.tsx'
 
+# Header Size
+
+# H1
+H1です。
+
+## H2
+H2です。
+
+### H3
+H3です。
+
+#### H4
+H4です。
+
+# Main Text
+本文の大きさはこれです。[URLリンクはこのように見えます](https://mountain-digital-business-card.pages.dev/)。
+`codeはこれです`。また、**アクセント**はこのように描画されます。
+
+# CodeBlock
+CodeBlockは以下のように描画されます。
+```typescript
+type Sample = {
+	firstName: string
+	lastName: string
+	age: number
+}
+```
+
+# Matrix
+これがMatrixの描画です。
+
+|Name|Age|
+|----|---|
+|Yamaguchi Ichiro|42|
+|Kusakari Ami|39|
+
+# QuoteBlock
+QuoteBlockは以下のように描画されます。
+> これはクオートブロックです。
+> 確認お願いします。
+
+# List
+Listは以下のように描画されます。
+- list1
+- list2
+- list3
+
+# LinkCard
 <LinkCard url="https://docs.astro.build/ja/basics/layouts/" client:load />
