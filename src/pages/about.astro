@@ -1,24 +1,24 @@
 ---
 import Layout from '../layouts/BlogPost.astro'
-import SkillTag from '../components/SkillTag.astro'
+import SkillGrade from '../components/SkillGrade.astro'
 import '../styles/content.css'
 
 const skillSet= [
-	{ Name: 'Git', Years: '5+' },
-	{ Name: 'Terraform', Years: '5+' },
-	{ Name: 'AWS', Years: '5+' },
-	{ Name: 'アジャイル開発/スクラム', Years: '5+' },
-	{ Name: 'CI/CD', Years: '5+' },
-	{ Name: 'GitHub Actions', Years: '3+' },
-	{ Name: 'Serverless Architecture', Years: '3+' },
-	{ Name: 'TypeScript', Years: '3+' },
-	{ Name: 'React', Years: '3+' },
-	{ Name: 'Next.js', Years: '3+' },
-	{ Name: 'Container', Years: '3+' },
-	{ Name: 'Test Driven Development', Years: '3+' },
-	{ Name: 'Go', Years: '3+' },
-	{ Name: 'Kotlin', Years: '1+' },
-	{ Name: 'Swift', Years: '1+' }
+	{ name: 'Git', grade: 3, years: 5 },
+	{ name: 'Terraform', grade: 4, years: 5 },
+	{ name: 'AWS', grade: 4, years: 5 },
+	{ name: 'Agile/Scrum', grade: 4, years: 5 },
+	{ name: 'CI/CD', grade: 4, years: 5 },
+	{ name: 'GitHub Actions', grade: 3, years: 3 },
+	{ name: 'Serverless Architecture', grade: 4, years: 5 },
+	{ name: 'TypeScript', grade: 3, years: 3},
+	{ name: 'React', grade: 3, years: 3 },
+	{ name: 'Next.js', grade: 3, years: 3 },
+	{ name: 'Container', grade: 3, years: 5 },
+	{ name: 'TDD', grade: 3, years: 3 },
+	{ name: 'Go', grade: 2, years: 2 },
+	{ name: 'Kotlin', grade: 1, years: 1 },
+	{ name: 'Swift', grade: 1, years: 1 }
 ]
 ---
 
@@ -29,7 +29,7 @@ const skillSet= [
 	updatedDate={new Date('March 1 2024')}
 	heroImage="/yamamori-rice.jpg"
 >
-	<h1 class="my-2">略歴</h1>
+	<h1>略歴</h1>
 	<p>
 		2014年新卒で国内通信事業者に入社しました。法人事業でのSEに従事した後、開発部門へ異動、Home IoT系サービスのプロダクト開発・運用を行っていました。
 		アジャイル開発/スクラムを実践していて、モブプログラミングも盛んなチームだったのでインフラ、バックエンド、スマートフォンネイティブアプリまで幅広くコーディングをしていました。
@@ -39,15 +39,19 @@ const skillSet= [
 		ここでも技術スタックにとらわれず、お客様やプロダクトに対して必要なことに取り組むことをモットーとしていました。
 	</p>
 
-	<h1 class="my-2">スキルセット</h1>
-	<p>
-		<SkillTag skillSet={skillSet} />
-	</p>
+	<h1>スキルセット</h1>
+	<div class="flex flex-wrap gap-3 justify-center items-center">
+		{skillSet && skillSet.map((skill) => (
+			<div class="w-[320px] max-md:w-full">
+				<SkillGrade name={skill.name} grade={skill.grade} years={skill.years} />
+			</div>
+		))}
+		<!--<SkillTag skillSet={skillSet} />-->
+	</div>
 
-	<h1 class="my-2">外部登壇</h1>
-	<ul>
+	<h1>外部発信</h1>
+	<ul class="mb-4">
 		<li>【ブログ】<a href="https://aws.amazon.com/jp/builders-flash/202209/master-asynchronous-execution-04/?awsf.filter-name=*all" target="_blank">非同期処理を使いこなそう! -第4回 非同期処理の設計上の検討ポイント</a></li>
 		<li>【Youtube】<a href="https://www.youtube.com/watch?v=i7msA8Iq4j4" target="_blank">T5-2: サーバーレスサービスを活用した非同期処理のはじめの一歩</a></li>
 	</ul>
-
 </Layout>

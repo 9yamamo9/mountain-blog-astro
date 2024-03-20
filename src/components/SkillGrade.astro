@@ -1,0 +1,20 @@
+---
+interface Props {
+	name: string
+	grade: number
+	years: number
+}
+
+const { name, grade, years} = Astro.props
+
+const percentage = (grade / 5) * 100
+---
+
+<div class="flex items-center justify-center">
+	<div>
+		<div class="text-base font-bold text-gray-500">{name} / {years}+ years</div>
+		<div class="w-[250px] h-4 bg-gray-200 rounded-full mb-4">
+			<div class="bg-red-700 h-full rounded-full text-xs text-gray-300" style=`width: ${percentage}%`></div>
+		</div>
+	</div>
+</div>
