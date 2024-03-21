@@ -1,12 +1,9 @@
 ---
-const { contentTags } = Astro.props
+interface Props {
+	name: string
+}
+
+const { name } = Astro.props
 ---
 
-<div class="gap-3">
-	{contentTags && contentTags.map((tag: string) => (
-		<span
-			class="bg-gray-100 text-gray-600 text-md font-medium me-2 px-2.5 py-0.5 rounded-full dark:bg-gray-700 dark:text-gray-300">
-			{tag}
-		</span>
-	))}
-</div>
+<span class="mr-2 px-2 bg-gray-200 border rounded-full text-gray-500">{name}</span>
