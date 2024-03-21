@@ -5,12 +5,12 @@ import '../styles/content.css'
 
 const skillSet= [
 	{ name: 'Git', grade: 3, years: 5 },
-	{ name: 'Terraform', grade: 4, years: 5 },
 	{ name: 'AWS', grade: 4, years: 5 },
+	{ name: 'Terraform', grade: 4, years: 5 },
 	{ name: 'Agile/Scrum', grade: 4, years: 5 },
 	{ name: 'CI/CD', grade: 4, years: 5 },
 	{ name: 'GitHub Actions', grade: 3, years: 3 },
-	{ name: 'Serverless Architecture', grade: 4, years: 5 },
+	{ name: 'Serverless Architect', grade: 4, years: 5 },
 	{ name: 'TypeScript', grade: 3, years: 3},
 	{ name: 'React', grade: 3, years: 3 },
 	{ name: 'Next.js', grade: 3, years: 3 },
@@ -18,7 +18,8 @@ const skillSet= [
 	{ name: 'TDD', grade: 3, years: 3 },
 	{ name: 'Go', grade: 2, years: 2 },
 	{ name: 'Kotlin', grade: 1, years: 1 },
-	{ name: 'Swift', grade: 1, years: 1 }
+	{ name: 'Swift', grade: 1, years: 1 },
+	{ name: 'Python', grade: 2, years: 3 },
 ]
 ---
 
@@ -41,7 +42,7 @@ const skillSet= [
 
 	<h1>スキルセット</h1>
 	<div class="flex flex-wrap gap-3 justify-center items-center">
-		{skillSet && skillSet.map((skill) => (
+		{skillSet && skillSet.sort((a, b) => b.grade - a.grade).map((skill) => (
 			<div class="w-[320px] max-md:w-full">
 				<SkillGrade name={skill.name} grade={skill.grade} years={skill.years} />
 			</div>
