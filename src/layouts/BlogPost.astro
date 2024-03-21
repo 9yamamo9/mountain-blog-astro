@@ -40,7 +40,9 @@ const { title, description, tags, pubDate, updatedDate, heroImage } = Astro.prop
 					}
 				</div>
 				<div class="my-5">
-					<ContentTag contentTags={tags} />
+					{tags && tags.map((tag) => (
+						<ContentTag name={tag} />
+					))}
 				</div>
 				<hr />
 			</div>
