@@ -1,0 +1,36 @@
+---
+import type { HTMLAttributes } from 'astro/types'
+import { getCollection } from 'astro:content'
+import ContentTag from './ContentTag.astro'
+
+const tagMap = new Map<string, string[]>()
+const tags: string[] = []
+const posts = await getCollection('blog', ({ data }) => {
+	return !data.editing
+})
+
+posts.forEach((post) => {
+	post.data.tags.forEach((tag) => {
+		const slug = post.slug
+
+		if (!tags.includes(tag)) {
+			tags.push(tag)
+		}
+
+		if (tagMap.has(tag)) {
+			tagMap.get(tag).push(slug)
+		} else {
+			tagMap.set(tag, [slug])
+		}
+	})
+})
+
+type Props = HTMLAttributes<'div'>
+
+const { class: className } = Astro.props
+---
+
+<div class=`${className} p-4 w-1/2 border rounded-lg border-gray-400`>
+	<div class="pb-2 font-bold text-gray-600">Categories</div>
+	<ContentTag contentTags={tags} />
+</div>

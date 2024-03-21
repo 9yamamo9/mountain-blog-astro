@@ -6,6 +6,7 @@ import { SITE_TITLE, SITE_DESCRIPTION } from '../consts'
 import { getCollection } from 'astro:content'
 import FormattedDate from '../components/FormattedDate.astro'
 import ContentTag from '../components/ContentTag.astro'
+import ContentTagsCard from '../components/ContentTagsCard.astro'
 
 const posts = (await getCollection('blog')).sort(
 	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
@@ -19,33 +20,36 @@ const posts = (await getCollection('blog')).sort(
 </head>
 <body>
 <Header />
-<main class="w-[960px]">
-	<section>
-		<ul class="flex flex-col gap-8 list-none py-4 max-md:gap-2">
-			{
-				posts.map((post) => (
-					<li class="w-[80%-1rem] max-md:text-center max-md:w-full">
-						<a
-							class="group flex duration-[0.2s] ease-in-out rounded-lg border-[1px] border-slate-400 hover:border-red-700 items-center divide-x max-md:flex-col max-md:divide-y"
-							href={`/blog/${post.slug}/`}>
-							<img class="flex-none w-[30%] p-2 rounded-2xl max-md:w-full" src={post.data.heroImage} alt="" />
-							<div class="flex-1 px-4 py-2">
-								<h5
-									class="text-gray-600 font-bold leading-2 group-hover:text-red-700">{post.data.title}</h5>
-								<p class="text-sm text-gray-500 group-hover:text-red-700">{post.data.description}</p>
-								<p class="text-xs text-gray-500 text-right group-hover:text-red-700">
-									<FormattedDate date={post.data.pubDate} />
-								</p>
-								<div class="max-md:hidden">
-									<ContentTag contentTags={post.data.tags} />
+<main class="w-[1400px]">
+	<div class="flex p-4">
+		<ContentTagsCard class="mx-4 max-md:hidden"/>
+		<section>
+			<ul class="flex flex-col gap-8 list-none max-md:gap-2">
+				{
+					posts.map((post) => (
+						<li class="w-[80%-1rem] max-md:text-center max-md:w-full">
+							<a
+								class="group flex duration-[0.2s] ease-in-out rounded-lg border-[1px] border-slate-400 hover:border-red-700 items-center divide-x max-md:flex-col max-md:divide-y"
+								href={`/blog/${post.slug}/`}>
+								<img class="flex-none w-[30%] p-2 rounded-2xl max-md:w-full" src={post.data.heroImage} alt="" />
+								<div class="flex-1 px-4 py-2">
+									<h5
+										class="text-gray-600 font-bold leading-2 group-hover:text-red-700">{post.data.title}</h5>
+									<p class="text-sm text-gray-500 group-hover:text-red-700">{post.data.description}</p>
+									<p class="text-xs text-gray-500 text-right group-hover:text-red-700">
+										<FormattedDate date={post.data.pubDate} />
+									</p>
+									<div class="max-md:hidden">
+										<ContentTag contentTags={post.data.tags} />
+									</div>
 								</div>
-							</div>
-						</a>
-					</li>
-				))
-			}
-		</ul>
-	</section>
+							</a>
+						</li>
+					))
+				}
+			</ul>
+		</section>
+	</div>
 </main>
 <Footer />
 </body>
