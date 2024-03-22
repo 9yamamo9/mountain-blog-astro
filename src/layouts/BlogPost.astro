@@ -18,7 +18,7 @@ const images = import.meta.glob<{ default: ImageMetadata }>(`/src/content/assets
 if (!images[heroImagePath]) throw new Error(`"${heroImagePath}" does not exist in glob: "src/assets/hero-images/*.{jpeg,jpg,png,gif}"`)
 ---
 
-<html lang="jp">
+<html lang="ja">
 <head>
 	<BaseHead title={title} description={description} heroImage={heroImage} />
 </head>
