@@ -1,5 +1,5 @@
 ---
-import { ImageMetadata } from 'astro'
+import type { ImageMetadata } from 'astro'
 import { Image } from 'astro:assets'
 import BaseHead from '../components/BaseHead.astro'
 import Header from '../components/Header.astro'
@@ -15,7 +15,7 @@ const posts = (await getCollection('blog')).sort(
 
 const images = import.meta.glob<{ default: ImageMetadata }>(`/src/content/assets/hero-images/*.{jpeg,jpg,png,gif}`)
 posts.map((post) => {
-	// if (!images[post.data.heroImage]) throw new Error(`"${post.data.heroImage}" does not exist in glob: "src/assets/hero-images/*.{jpeg,jpg,png,gif}"`)
+	if (!images[post.data.heroImage]) throw new Error(`"${post.data.heroImage}" does not exist in glob: "src/assets/hero-images/*.{jpeg,jpg,png,gif}"`)
 })
 ---
 
@@ -35,7 +35,7 @@ posts.map((post) => {
 						<a
 							class="group flex duration-[0.2s] ease-in-out rounded-lg border-[1px] border-slate-400 hover:border-red-700 items-center divide-x max-md:flex-col max-md:divide-y"
 							href={`/blog/${post.slug}/`}>
-							<Image class="flex-none w-[30%] p-2 rounded-2xl max-md:w-full" src={images[post.data.heroImage]()} alt="" />
+							<Image class="flex-none w-[30%] p-2 rounded-2xl max-md:w-full" src={images[post.data.heroImage as string]()} alt="" />
 							<div class="flex-1 px-4 py-2">
 								<h5
 									class="text-gray-600 font-bold leading-2 group-hover:text-red-700">{post.data.title}</h5>
