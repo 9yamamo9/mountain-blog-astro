@@ -15,7 +15,8 @@ const posts = (await getCollection('blog')).sort(
 
 const images = import.meta.glob<{ default: ImageMetadata }>(`/src/content/assets/hero-images/*.{jpeg,jpg,png,gif}`)
 posts.map((post) => {
-	if (!images[post.data.heroImage]) throw new Error(`"${post.data.heroImage}" does not exist in glob: "src/assets/hero-images/*.{jpeg,jpg,png,gif}"`)
+	const heroImagePath = post.data.heroImage as string
+	if (!images[heroImagePath]) throw new Error(`"${heroImagePath}" does not exist in glob: "src/assets/hero-images/*.{jpeg,jpg,png,gif}"`)
 })
 ---
 
