@@ -1,4 +1,6 @@
 ---
+import type { ImageMetadata } from 'astro'
+import { Image } from 'astro:assets'
 import BaseHead from '../components/BaseHead.astro'
 import Header from '../components/Header.astro'
 import Footer from '../components/Footer.astro'
@@ -10,6 +12,12 @@ import ContentTag from '../components/ContentTag.astro'
 const posts = (await getCollection('blog')).sort(
 	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
 ).filter((post) => !post.data.editing)
+
+const images = import.meta.glob<{ default: ImageMetadata }>(`/src/content/assets/hero-images/*.{jpeg,jpg,png,gif}`)
+posts.map((post) => {
+	const heroImagePath = post.data.heroImage as string
+	if (!images[heroImagePath]) throw new Error(`"${heroImagePath}" does not exist in glob: "src/assets/hero-images/*.{jpeg,jpg,png,gif}"`)
+})
 ---
 
 <!doctype html>
@@ -28,7 +36,7 @@ const posts = (await getCollection('blog')).sort(
 						<a
 							class="group flex duration-[0.2s] ease-in-out rounded-lg border-[1px] border-slate-400 hover:border-red-700 items-center divide-x max-md:flex-col max-md:divide-y"
 							href={`/blog/${post.slug}/`}>
-							<img class="flex-none w-[30%] p-2 rounded-2xl max-md:w-full" src={post.data.heroImage} alt="" />
+							<Image class="flex-none w-[30%] p-2 rounded-2xl max-md:w-full" src={images[post.data.heroImage as string]()} alt="" />
 							<div class="flex-1 px-4 py-2">
 								<h5
 									class="text-gray-600 font-bold leading-2 group-hover:text-red-700">{post.data.title}</h5>
