@@ -23,36 +23,32 @@ if (!images[heroImagePath]) throw new Error(`"${heroImagePath}" does not exist i
 	<BaseHead title={title} description={description} heroImage={heroImage} />
 </head>
 
-<body>
+<body class="flex flex-col min-h-[100vh]">
 <Header />
-<main>
+<main class="my-auto px-2 py-4">
 	<article>
-		<div class="w-full">
-			{heroImage &&
-				<Image class="block mt-0 mr-auto mb-auto ml-auto rounded-xl" width={510} height={255}
-							 src={images[heroImage]()} alt=""/>}
-		</div>
-		<div class="w-[720px] max-w-full mx-auto text-gray-700">
-			<div class="text-center">
-				<h1 class="max-md:text-2xl">{title}</h1>
-				<div class="text-gray-500 text-end">
-					<FormattedDate date={pubDate} />
-					{
-						updatedDate && (
-							<div class="italic">
-								Last updated on
-								<FormattedDate date={updatedDate} />
-							</div>
-						)
-					}
-				</div>
-				<div class="my-5">
-					{tags && tags.map((tag) => (
-						<ContentTag name={tag} />
-					))}
-				</div>
-				<hr />
+		{heroImage &&
+			<Image class="mx-auto rounded-xl" width={510} height={255}
+						 src={images[heroImage]()} alt="" />}
+		<div class="w-[720px] mx-auto text-gray-700 max-md:w-full">
+			<h1 class="text-center max-md:text-2xl">{title}</h1>
+			<div class="text-gray-500 text-end">
+				<FormattedDate date={pubDate} />
+				{
+					updatedDate && (
+						<div class="italic">
+							Last updated on
+							<FormattedDate date={updatedDate} />
+						</div>
+					)
+				}
 			</div>
+			<div class="my-5 text-center">
+				{tags && tags.map((tag) => (
+					<ContentTag name={tag} />
+				))}
+			</div>
+			<hr class="my-2" />
 			<slot />
 		</div>
 	</article>

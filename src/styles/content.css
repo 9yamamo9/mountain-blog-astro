@@ -3,10 +3,6 @@
 @tailwind utilities;
 
 @layer base {
-    main {
-        @apply mt-4
-    }
-
     h1 {
         @apply text-3xl mt-6 mb-3 font-bold  max-md:text-2xl
     }
