@@ -40,7 +40,7 @@
     }
 
     blockquote > p {
-        @apply px-2
+        @apply px-2 italic
     }
 
     strong {

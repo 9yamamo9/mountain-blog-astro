@@ -1,0 +1,96 @@
+---
+title: 'このサイトの画像フォーマットの最適化とDynamic Import'
+description: '本ポストでは、パフォーマンス改善として実施した内容を記載します。特に、Astroの提供機能で実現することができる画像フォーマットの最適化と、Dynamic Importの機能を説明します。'
+tags:
+ - 'Astro'
+ - 'Optimize Image'
+ - 'Image Format'
+ - 'Dynamic Import'
+ - 'Web Performance'
+ - 'Frontend'
+pubDate: 'March 23 2024'
+heroImage: '/src/content/assets/hero-images/optimize-image-format-in-astro.png'
+editing: false
+---
+
+import { Image } from 'astro:assets'
+import LinkCard from '../../components/LinkCard.tsx'
+import webPerformanceResultImage from '../assets/web-performance-result.png'
+import webPerformanceReasonImage from '../assets/web-performance-reason.png'
+import webPerformanceResultAfterImage from '../assets/web-performance-result-after.png'
+
+# はじめに
+このブログサイトのパフォーマンスを確認したところ、下のように（特にMobileにて）PerformanceとAccessibilityのスコアが芳しくありませんでした。
+
+<Image class="border rounded-lg my-10" src={webPerformanceResultImage} alt="Web Performaceの結果" />
+
+Performanceの大きな原因を確認してみると、どうも画像のフォーマットの問題のようでした。
+"Image formats like WebP and AVIF open provide better compression than PNG or JPEG, which means faster downloads and less data consumption."
+とあります。実際に画像フォーマットはPNGを利用していました。
+
+<Image class="border rounded-xl my-10" src={webPerformanceReasonImage} alt="Web Perfomanceの原因" />
+
+これを解消するためにAstroの機能である`<Image />`や`Dynamic Import`を利用しましたので、備忘の意味も込めて記載していきたいと思います。
+なお、画像フォーマットの解説は[こちら](https://developer.chrome.com/docs/lighthouse/performance/uses-webp-images/?utm_source=lighthouse&utm_medium=lr)を参考にしてください。
+
+# フォーマットを変更する
+実際にPNGを利用していたのですが、どのようにWebPやAVIFにフォーマットを変更するのでしょうか。
+Astroのドキュメントを確認してみると、`<Image />`なるものが存在します。
+(まあ、存在しますよね、例えばNext.jsにも画像用のタグが存在していますし、白状するとを`<img />`をそのまま利用していました。)
+
+<LinkCard url="https://docs.astro.build/ja/guides/images/#image--astroassets" client:load />
+
+そして更に、プロパティのひとつである[format](https://docs.astro.build/ja/guides/images/#format)のドキュメントを読んでみると、以下と記載があります。
+
+> オプションで、使用する画像ファイルタイプの出力を指定できます。
+>デフォルトでは、`<Image />`コンポーネントは.webpファイルを出力します。
+
+これを利用すればいいのですが、今度は[こちら](https://docs.astro.build/ja/guides/images/#src%E3%81%A8public)のドキュメントを見ると、どうも`public/`に格納されているファイルは特に処理されないとのこと。
+パフォーマンスに影響を与えている画像ファイルたちはすべて`public/`に格納していたので`src/`内に再配置しなくてはならないことがわかりました。
+
+## 動的にインポートエイリアスを設定する
+画像ファイルたちを`src/`に再配置しました。
+ここでもうひとつ実施しなければならないことがあります。
+パフォーマンスを計測したページはAstroに対するAPIである`getCollection()`を利用して動的に生成しています。
+そのため、どの画像ファイルが必要となるのかも動的に選定しなくてはなりません。
+そこで参考になるのが、**Dynamic Import**です。
+
+<LinkCard url="https://docs.astro.build/ja/recipes/dynamically-importing-images/" client:load />
+
+### Dynamic Importを利用した画像ファイルパスのインポートエイリアス
+画像ファイルを動的に選定してそれをインポートエイリアスとして生成するためのコードは以下となります。
+
+```typescript
+---
+import type { ImageMetadata } from 'astro'
+import { getCollection } from 'astro:content'
+
+const posts = (await getCollection('blog'))
+
+const images = import.meta.glob<{ default: ImageMetadata }>(`/src/content/assets/hero-images/*.{jpeg,jpg,png,gif}`)
+---
+```
+
+まずは、`getCollection()`を利用してコンテンツであるすべての`blog`の情報を取得しています。
+結果は`posts`にリストとして格納されますが、各要素の中に画像のファイルパスが`heroImage`として入っています。
+
+一方、`import.meta.glob()`で指定したファイルパス（ワイルドカードでしているので各ファイルパス）とそのインポートエイリアスとのMapを返却してくれます。
+ということで、以下のようなコードを記載することで、動的に画像のファイルパスを`<Image />`に指定することが可能になります。
+
+```html
+<div>
+	{posts && posts.map(post) => (
+		<Image src={images[post.data.heroImage]()} alt="" />
+	)}
+</div>
+```
+
+# 最適化の結果
+最適化を行った結果、下の画像のようにPerformanceが改善されたことが確認できると思います。
+Accessibilityの改善も確認することができますが、こちらは別の対応を行った結果であり、その内容はここでは割愛します。
+
+<Image class="border rounded-xl my-10" src={webPerformanceResultAfterImage} alt="最適化の結果" />
+
+# さいごに
+いかがでしたでしょうか。Web Performanceは様々な要因で変化します。今回は画像フォーマットに絞ってお伝えしました。
+みなさまのお役に立てたら幸いです。
