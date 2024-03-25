@@ -1,0 +1,29 @@
+---
+interface Props {
+	depth: number
+	slug: string
+	text: string
+	pathname: string
+}
+
+const { depth, slug, text, pathname } = Astro.props
+const uri = `${pathname}#${slug}`
+
+const styleByDepth = (depth: number): string => {
+	switch (depth) {
+		case 1:
+			return 'text-sm px-2'
+		case 2:
+			return 'text-xs px-4'
+		case 3:
+			return 'text-[0.7rem] px-6'
+	}
+}
+---
+
+
+<li class=`${styleByDepth(depth)} py-2 leading-3 list-none`>
+	<a class="text-gray-500" href={uri}>
+		{text}
+	</a>
+</li>

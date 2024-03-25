@@ -7,10 +7,15 @@ import Footer from '../components/Footer.astro'
 import FormattedDate from '../components/FormattedDate.astro'
 import ContentTag from '../components/ContentTag.astro'
 import type { ImageMetadata } from 'astro'
+import TableOfContents from '../components/TableOfContents.astro'
 
 type Props = CollectionEntry<'blog'>['data'];
 
-const { title, description, tags, pubDate, updatedDate, heroImage } = Astro.props
+const { title, description, tags, pubDate, updatedDate, heroImage, headings } = Astro.props
+const pathname = Astro.url.pathname
+
+console.log(headings)
+console.log(pathname)
 
 const heroImagePath = heroImage as string
 
@@ -26,32 +31,43 @@ if (!images[heroImagePath]) throw new Error(`"${heroImagePath}" does not exist i
 <body class="flex flex-col min-h-[100vh]">
 <Header />
 <main class="my-auto px-2 py-4">
-	<article>
-		{heroImage &&
-			<Image class="mx-auto rounded-xl" width={510} height={255}
-						 src={images[heroImage]()} alt="" />}
-		<div class="w-[720px] mx-auto text-gray-700 max-md:w-full">
-			<h1 class="text-center max-md:text-2xl">{title}</h1>
-			<div class="text-gray-500 text-end">
-				<FormattedDate date={pubDate} />
-				{
-					updatedDate && (
-						<div class="italic">
-							Last updated on
-							<FormattedDate date={updatedDate} />
-						</div>
-					)
-				}
+	<div class="flex justify-center">
+		<article>
+			{heroImage &&
+				<Image class="mx-auto rounded-xl" width={510} height={255}
+							 src={images[heroImage]()} alt="" />}
+			<div class="w-[720px] mx-auto text-gray-700 max-md:w-full">
+				<h1 class="text-center max-md:text-2xl">{title}</h1>
+				<div class="text-gray-500 text-end">
+					<FormattedDate date={pubDate} />
+					{
+						updatedDate && (
+							<div class="italic">
+								Last updated on
+								<FormattedDate date={updatedDate} />
+							</div>
+						)
+					}
+				</div>
+				<div class="my-5 text-center">
+					{tags && tags.map((tag) => (
+						<ContentTag name={tag} />
+					))}
+				</div>
+				<hr class="my-2" />
+				<slot />
 			</div>
-			<div class="my-5 text-center">
-				{tags && tags.map((tag) => (
-					<ContentTag name={tag} />
+		</article>
+		{headings && (
+			<div class="w-[20%] h-min sticky top-5 bg-gray-50 border rounded ml-8 p-2 text-gray-500 max-md:hidden">
+				{headings.map((heading) => (
+					<ul class="p-0">
+						<TableOfContents depth={heading.depth} slug={heading.slug} text={heading.text} pathname={pathname}/>
+					</ul>
 				))}
 			</div>
-			<hr class="my-2" />
-			<slot />
-		</div>
-	</article>
+		)}
+	</div>
 </main>
 <Footer />
 </body>
