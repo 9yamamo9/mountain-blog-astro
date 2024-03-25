@@ -1,6 +1,5 @@
 ---
 import { Image } from 'astro:assets'
-import type { CollectionEntry } from 'astro:content'
 import BaseHead from '../components/BaseHead.astro'
 import Header from '../components/Header.astro'
 import Footer from '../components/Footer.astro'
@@ -8,8 +7,17 @@ import FormattedDate from '../components/FormattedDate.astro'
 import ContentTag from '../components/ContentTag.astro'
 import type { ImageMetadata } from 'astro'
 import TableOfContents from '../components/TableOfContents.astro'
+import type { Heading, Headings } from '../types/Heading'
 
-type Props = CollectionEntry<'blog'>['data'];
+type Props = {
+	title: string
+	description: string
+	pubDate: Date
+	updatedDate?: Date
+	heroImage?: string
+	tags?: string[]
+	headings?: Headings
+}
 
 const { title, description, tags, pubDate, updatedDate, heroImage, headings } = Astro.props
 const pathname = Astro.url.pathname
@@ -60,7 +68,7 @@ if (!images[heroImagePath]) throw new Error(`"${heroImagePath}" does not exist i
 		</article>
 		{headings && (
 			<div class="w-[20%] h-min sticky top-5 bg-gray-50 border rounded ml-8 p-2 text-gray-500 max-md:hidden">
-				{headings.map((heading) => (
+				{headings.map((heading: Heading) => (
 					<ul class="p-0">
 						<TableOfContents depth={heading.depth} slug={heading.slug} text={heading.text} pathname={pathname}/>
 					</ul>
