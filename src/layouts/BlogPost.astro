@@ -22,9 +22,6 @@ type Props = {
 const { title, description, tags, pubDate, updatedDate, heroImage, headings } = Astro.props
 const pathname = Astro.url.pathname
 
-console.log(headings)
-console.log(pathname)
-
 const heroImagePath = heroImage as string
 
 const images = import.meta.glob<{ default: ImageMetadata }>(`/src/content/assets/hero-images/*.{jpeg,jpg,png,gif}`)
