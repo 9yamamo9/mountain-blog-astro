@@ -54,4 +54,12 @@
     a {
         @apply text-blue-700
     }
+
+    ul {
+        @apply list-disc pl-8
+    }
+
+    ol {
+        @apply list-decimal pl-8
+    }
 }
