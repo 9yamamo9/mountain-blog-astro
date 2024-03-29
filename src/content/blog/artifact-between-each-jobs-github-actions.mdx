@@ -1,0 +1,100 @@
+---
+title: 'working-directoryを指定したjobでArtifactをアップロードしたらハマってしまいました'
+description: 'GitHub Actionsでは複数のjob間でArtifactをやり取りすることができます。一方のjobでは、working-directoryを指定していました。その中でArtifactをアップロードしようとした際のハマりポイントを記載します。'
+tags:
+ - 'GitHub Actions'
+ - 'Upload / Download Artifact'
+ - 'working-directory'
+ - 'CI/CD'
+pubDate: 'March 30 2024'
+heroImage: '/src/content/assets/hero-images/artifact-between-each-jobs-github-actions.png'
+editing: false
+---
+
+import { Image } from 'astro:assets'
+import artifactUploadWarningImage from '../assets/upload-artifact-warning.png'
+
+# はじめに
+実現しようとしていたことは、一方のJobではNodeでのテストやビルドを実施するものです。
+このテストやビルドは特定のディレクトリに対して実施するものだったので、`working-directory`を利用して該当ディレクトリをjob全体の作業ディレクトリとして指定しました。
+Artifactのやり取りについては、以下の2つのActionを利用します。このような時に、僕のハマったポイントをみなさんお伝えできればと思います。
+
+# ディレクトリ構成
+まずは、今回のディレクトリ構成をお伝えします。
+`packages`ディレクトリにはビルド前の（TypeScript）コードが配置されています。
+このコードに対してビルドを行うと、`build`ディレクトリに出力されます。
+
+```bash
+.
+└── packages
+    ├── build
+    │   └── webhook
+    │       └── index.js
+    ├── package.json
+    ├── pnpm-lock.yaml
+    ├── tsconfig.json
+    └── webhook
+        └── src
+            ├── index.ts
+            └── tsconfig.json
+```
+
+# GitHub Actionsの作業ディレクトリ
+上のディレクトリ構成をご覧いただくとわかるとおり、ビルドは`packages`ディレクトリで実施します。
+そのため、このビルドを行うjobに対しては以下のコードのように`working-directory`で作業ディレクトリを指定しました。
+
+```yaml
+jobs:
+  build:
+    name: 'Build'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: packages
+
+		steps:
+			...
+```
+
+上の指定により、このjob内の作業ディレクトリは原則として、`packages`ディレクトリとなります。
+
+# ArtifactのアップロードでArtifactが存在しない
+この指定によって問題なく、ビルド自体は行われていました。
+しかしならが、[upload-artifact](https://github.com/actions/upload-artifact)を使用して、以下のようにアップロードを実施しようとしましたが、**Warning**が発生しました。
+
+## アプロード部分のコード
+`path`では、アップロード対象であるファイルパスやディレクトリを指定します。
+このjobでは、作業ディレクトリを`packages`にしていたので、その直下に`build`ディレクトリは存在しています。
+そのため、`path: build`と記述しました。
+
+```yaml
+- name: 'Upload Artifacts'
+  uses: actions/upload-artifact@v4
+  with:
+    name: build_artifact
+    path: build
+```
+
+## 発生したWarning
+しかし、GitHub Actionsを実行してみると、以下のようなWarningが発生しました。
+実際にアップロードされているArtifactも存在しない状態です。
+
+<div className="flex justify-center">
+	<Image class="border rounded-xl my-5" src={artifactUploadWarningImage} alt="" />
+</div>
+
+# upload-artifactのpathはrootディレクトリが起点
+このWarningの原因は、upload-artifactのpathは**root**ディレクトリが起点となるということを見落としていたことにあります。
+そのため、pathは`package/build`を指定しなければならなかったのです。
+公式ドキュメントの記載はまだ見つけられていないですが…。
+これにより、無事にArtifactをアップロードすることができました。
+
+## download-artifactのpathも同様の考え方
+[download-artifact](https://github.com/actions/download-artifact)もダウンロードしたArtifactをどこに配置するか、`path`で指定することができます。
+このpathも起点はrootディレクトリになります。
+
+# さいごに
+いかがでしたでしょうか。
+原因としてはシンプルかつ初歩的なものだと思いますが、地味に躓いてしまったところなので共有としてお伝えできればと思います。
+誰かのお役に立てれば幸いです。
