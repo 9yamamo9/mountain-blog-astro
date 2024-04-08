@@ -1,0 +1,127 @@
+---
+title: 'TypeScriptのDIライブラリとしてtsyringeを使ってみました'
+description: '本ポストでは、TypeScriptのDIライブラリであるtsyringeの基本的な使い方をコードベースで記述していきます。'
+tags:
+ - 'TypeScript'
+ - 'DI'
+ - 'Dependency Injection'
+ - 'tsyringe'
+ - 'Software Architecture'
+ - 'Domain Driven Design'
+pubDate: 'April 08 2024'
+heroImage: '/src/content/assets/hero-images/use-tsyringe-for-dependency-injection.png'
+editing: false
+---
+
+# はじめに
+現在、色々な個人開発を行っています。その中のひとつにSwitchbotとNature Remoを連携させたワークロードがあります（この話はまたどこかで）。
+この連携ワークロードの開発はTypeScriptを利用しているのですが、ここでDIライブラリとしてMicrosoftが提供している[**tsyringe**](https://github.com/microsoft/tsyringe?tab=readme-ov-file#tsyringe)を使っています。
+今回は基本的な利用方法を記載していきたいと思います。
+
+# サンプルユースケース
+基本的な利用方法は、上で軽くお伝えした連携ワークロードに出てくる簡単なユースケースをもとに記載できればと思います。
+Switchbotのデバイスを表す`Device`エンティティを用意しています。
+このデバイスの状態に応じて、Nature Remoを動作させるためのメッセージを送信するので、`notify`というメソッドが備わっています。
+
+## デバイス
+このエンティティを表すクラスが以下のコードです。
+このクラスメソッドの`notify`はデータベースへデータ登録も行います。
+そのため、このクラス自体にはデータベースを操作するためのオブジェクトをメンバーとして保持しますが、ここに**依存性の注入**（**Dependency Injection** / **DI**）があります。
+これを実施するためのライブラリとしてはtsyringeを使用します。
+
+```typescript
+import { autoInjectable, inject } from 'tsyringe'
+import { IDeviceDatabase } from './deviceDatabaseInterface'
+import { FinishState } from '../../type/switchbot/finishState'
+
+@autoInjectable()
+export default class Device {
+	readonly id: string
+	readonly status: string
+	readonly battery: number
+	private readonly database?: IDeviceDatabase
+
+	constructor(
+		id: string,
+		status: string,
+		battery: number,
+		@inject('IDeviceDatabase') database?: IDeviceDatabase,
+	) {
+		this.id = id
+		this.status = status
+		this.battery = battery
+		this.database = database
+	}
+
+	public notify = async (): Promise<FinishState> => {
+		// databaseに対してデータを投入する部分のみ抜粋
+		await this.database.register()
+	}
+}
+```
+
+依存性を注入するクラスに対しては、`@autoInjectable`アノテーションを記述します。
+一方、依存先に対しては、`@inject`アノテーションを利用します。
+`@inject('IDeviceDatabase')`のように引数にはトークンと呼ばれる、依存性を示す識別子を指定します。
+
+## データベースとインターフェース
+依存先である`IdeviceDatabase`インターフェースとその実装である`DeviceDynamoDB`は以下のようなコードになります。
+今回のデータベースはDynamoDBを利用しているので、実装としてはDynamoDBテーブルへのPutItemを記述しています。
+
+```typescript
+import Device from './device'
+
+export interface IDeviceDatabase {
+	register: (device: Device, messageId: string) => Promise<void>
+}
+```
+
+```typescript
+export default class DeviceDynamoDB implements IDeviceDatabase {
+	private readonly client: DynamoDBDocumentClient
+
+	constructor() {
+		this.client = DynamoDBDocumentClient.from(new DynamoDBClient({}))
+	}
+
+	public register = async (device: Device, messageId: string): Promise<void> => {
+		const command = new PutCommand(
+			{
+			TableName: `<dynamodb_table_name>`,
+			Item: {
+				Id: device.id,
+				Status: device.status,
+				Battery: device.battery,
+				MessageId: messageId
+			}
+		})
+
+		await this.client.send(command)
+	}
+}
+```
+
+## インスタンス生成
+デバイスのインスタンス生成に際しては、まず`IDeviceDatabase`として`DeviceDynamoDB`の依存性を注入するために`container.register()`を利用します。
+
+```typescript
+import { container } from 'tsyringe'
+import DeviceDynamoDB from './repogitory/dynamodb/device'
+import Device from './entity/switchbot/device'
+
+const main = async () => {
+	container.register('IDeviceDatabase', {
+		useClass: DeviceDynamoDB
+	})
+
+	const device = new Device('sampleDeviceId', 'sampleDeviceStatus', 100)
+
+	await device.notify()
+}
+
+main()
+```
+
+# さいごに
+いかがでしたでしょうか。**tsyringe**を利用することで比較的簡単にDIを実現することができました。
+今回は備忘のための記事なので、サンプルコードを主体にしてブログを記載しましたが、誰かの役に立てれば幸いです。
