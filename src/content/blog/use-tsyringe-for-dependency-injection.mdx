@@ -103,6 +103,7 @@ export default class DeviceDynamoDB implements IDeviceDatabase {
 
 ## インスタンス生成
 デバイスのインスタンス生成に際しては、まず`IDeviceDatabase`として`DeviceDynamoDB`の依存性を注入するために`container.register()`を利用します。
+これの第一引数には、先程の`@inject`アノテーションで指定したトークンと同じ値を記述します。
 
 ```typescript
 import { container } from 'tsyringe'
