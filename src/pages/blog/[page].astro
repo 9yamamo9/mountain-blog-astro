@@ -1,0 +1,99 @@
+---
+import type { ImageMetadata } from 'astro'
+import { Image } from 'astro:assets'
+import { getCollection } from 'astro:content'
+import ContentTag from '../../components/ContentTag.astro'
+import Footer from '../../components/Footer.astro'
+import BaseHead from '../../components/BaseHead.astro'
+import FormattedDate from '../../components/FormattedDate.astro'
+import Header from '../../components/Header.astro'
+import { SITE_DESCRIPTION, SITE_TITLE } from '../../consts'
+import Pagination from '../../components/Pagination.astro'
+
+export async function getStaticPaths({ paginate }: any) {
+	const posts = (await getCollection('blog'))
+		.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
+		.filter((post) => !post.data.editing)
+
+	const images = import.meta.glob<{ default: ImageMetadata }>(`/src/content/assets/hero-images/*.{jpeg,jpg,png,gif}`)
+	posts.map((post) => {
+		const heroImagePath = post.data.heroImage as string
+		if (!images[heroImagePath]) throw new Error(`"${heroImagePath}" does not exist in glob: "src/assets/hero-images/*.{jpeg,jpg,png,gif}"`)
+	})
+
+	const postPages = posts.map((post) => {
+		return { post: post, imagePath: images[post.data.heroImage as string]() }
+	})
+
+	return paginate(postPages, { pageSize: 10 })
+}
+
+type Page = {
+	data: any[]
+	start: number
+	end: number
+	total: number
+	currentPage: number
+	size: number
+	lastPage: number
+	url: {
+		current: string
+		prev: string | undefined
+		next: string | undefined;
+	}
+}
+
+interface Props {
+	page: Page
+}
+
+const { page } = Astro.props
+---
+
+<!doctype html>
+<html lang="ja">
+<head>
+	<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+</head>
+
+<body>
+<Header />
+<main class="w-[960px] m-auto px-2 py-4 max-lg:w-full max-md:w-full">
+	<section>
+		<ul class="flex flex-col min-h-[100vh] gap-8 list-none max-md:gap-2">
+			{
+				page.data && page.data.map(({ post, imagePath }: any) => (
+					<li>
+						<a
+							class="group flex ease-in-out border rounded-lg border-slate-400 hover:border-red-700 items-center divide-x max-md:flex-col max-md:divide-y"
+							href={`/blog/${post.slug}/`}>
+							<Image class="w-[30%] p-2 max-md:w-full"
+										 src={imagePath} alt="" />
+							<div class="p-2">
+								<h5
+									class="text-gray-600 font-bold leading-2 group-hover:text-red-700">{post.data.title}</h5>
+								<p class="text-sm text-gray-500 group-hover:text-red-700">{post.data.description}</p>
+								<p class="text-xs text-gray-500 text-right group-hover:text-red-700">
+									<FormattedDate date={post.data.pubDate} />
+								</p>
+								<div class="max-md:text-center">
+									{post.data.tags && post.data.tags.map((tag: any) => (
+										<ContentTag name={tag} />
+									))}
+								</div>
+							</div>
+						</a>
+					</li>
+				))
+			}
+		</ul>
+	</section>
+	{page.url && (
+		<div class="flex justify-center mt-4">
+			<Pagination url={page.url} />
+		</div>
+	)}
+</main>
+<Footer />
+</body>
+</html>
