@@ -24,25 +24,30 @@ export async function getStaticPaths({ paginate }: any) {
 	const postPages = posts.map((post) => {
 		return { post: post, imagePath: images[post.data.heroImage as string]() }
 	})
+
 	return paginate(postPages, { pageSize: 10 })
 }
 
-interface Props {
-	data: any[];
-	start: number;
-	end: number;
-	total: number;
-	currentPage: number;
-	size: number;
-	lastPage: number;
+type Page = {
+	data: any[]
+	start: number
+	end: number
+	total: number
+	currentPage: number
+	size: number
+	lastPage: number
 	url: {
-		current: string;
-		prev: string | undefined;
+		current: string
+		prev: string | undefined
 		next: string | undefined;
 	}
 }
 
-const page = Astro.props
+interface Props {
+	page: Page
+}
+
+const { page } = Astro.props
 ---
 
 <!doctype html>
@@ -57,37 +62,37 @@ const page = Astro.props
 	<section>
 		<ul class="flex flex-col min-h-[100vh] gap-8 list-none max-md:gap-2">
 			{
-				page.data.map(({ post, imagePath }: any) => {
-					return (
-						<li>
-							<a
-								class="group flex ease-in-out border rounded-lg border-slate-400 hover:border-red-700 items-center divide-x max-md:flex-col max-md:divide-y"
-								href={`/blog/${post.slug}/`}>
-								<Image class="w-[30%] p-2 max-md:w-full"
-											 src={imagePath} alt="" />
-								<div class="p-2">
-									<h5
-										class="text-gray-600 font-bold leading-2 group-hover:text-red-700">{post.data.title}</h5>
-									<p class="text-sm text-gray-500 group-hover:text-red-700">{post.data.description}</p>
-									<p class="text-xs text-gray-500 text-right group-hover:text-red-700">
-										<FormattedDate date={post.data.pubDate} />
-									</p>
-									<div class="max-md:text-center">
-										{post.data.tags && post.data.tags.map((tag: any) => (
-											<ContentTag name={tag} />
-										))}
-									</div>
+				page.data && page.data.map(({ post, imagePath }: any) => (
+					<li>
+						<a
+							class="group flex ease-in-out border rounded-lg border-slate-400 hover:border-red-700 items-center divide-x max-md:flex-col max-md:divide-y"
+							href={`/blog/${post.slug}/`}>
+							<Image class="w-[30%] p-2 max-md:w-full"
+										 src={imagePath} alt="" />
+							<div class="p-2">
+								<h5
+									class="text-gray-600 font-bold leading-2 group-hover:text-red-700">{post.data.title}</h5>
+								<p class="text-sm text-gray-500 group-hover:text-red-700">{post.data.description}</p>
+								<p class="text-xs text-gray-500 text-right group-hover:text-red-700">
+									<FormattedDate date={post.data.pubDate} />
+								</p>
+								<div class="max-md:text-center">
+									{post.data.tags && post.data.tags.map((tag: any) => (
+										<ContentTag name={tag} />
+									))}
 								</div>
-							</a>
-						</li>
-					)
-				})
+							</div>
+						</a>
+					</li>
+				))
 			}
 		</ul>
 	</section>
-	<div class="flex justify-center mt-4">
-		<Pagination previous={page.url.prev} next={page.url.next} />
-	</div>
+	{page.url && (
+		<div class="flex justify-center mt-4">
+			<Pagination url={page.url} />
+		</div>
+	)}
 </main>
 <Footer />
 </body>
