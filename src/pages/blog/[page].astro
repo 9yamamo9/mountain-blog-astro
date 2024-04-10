@@ -8,9 +8,9 @@ import BaseHead from '../../components/BaseHead.astro'
 import FormattedDate from '../../components/FormattedDate.astro'
 import Header from '../../components/Header.astro'
 import { SITE_DESCRIPTION, SITE_TITLE } from '../../consts'
-import Pagenation from '../../components/Pagenation.astro'
+import Pagination from '../../components/Pagination.astro'
 
-export async function getStaticPaths({ paginate }) {
+export async function getStaticPaths({ paginate }: any) {
 	const posts = (await getCollection('blog'))
 		.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
 		.filter((post) => !post.data.editing)
@@ -22,13 +22,27 @@ export async function getStaticPaths({ paginate }) {
 	})
 
 	const postPages = posts.map((post) => {
-		// console.log(`postData: ${JSON.stringify(post.data)}`)
 		return { post: post, imagePath: images[post.data.heroImage as string]() }
 	})
 	return paginate(postPages, { pageSize: 10 })
 }
 
-const { page } = Astro.props
+interface Props {
+	data: any[];
+	start: number;
+	end: number;
+	total: number;
+	currentPage: number;
+	size: number;
+	lastPage: number;
+	url: {
+		current: string;
+		prev: string | undefined;
+		next: string | undefined;
+	}
+}
+
+const page = Astro.props
 ---
 
 <!doctype html>
@@ -43,7 +57,7 @@ const { page } = Astro.props
 	<section>
 		<ul class="flex flex-col min-h-[100vh] gap-8 list-none max-md:gap-2">
 			{
-				page.data.map(({ post, imagePath }) => {
+				page.data.map(({ post, imagePath }: any) => {
 					return (
 						<li>
 							<a
@@ -59,7 +73,7 @@ const { page } = Astro.props
 										<FormattedDate date={post.data.pubDate} />
 									</p>
 									<div class="max-md:text-center">
-										{post.data.tags && post.data.tags.map((tag) => (
+										{post.data.tags && post.data.tags.map((tag: any) => (
 											<ContentTag name={tag} />
 										))}
 									</div>
@@ -72,7 +86,7 @@ const { page } = Astro.props
 		</ul>
 	</section>
 	<div class="flex justify-center mt-4">
-		<Pagenation previous={page.url.prev} next={page.url.next} />
+		<Pagination previous={page.url.prev} next={page.url.next} />
 	</div>
 </main>
 <Footer />
