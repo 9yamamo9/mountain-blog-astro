@@ -25,9 +25,11 @@ const images = import.meta.glob<{ default: ImageMetadata }>(`/src/content/assets
 
 const categorizedPosts = (await getCollection('blog'))
 	.filter((post) => post.data.category === params.category)
+	.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
 	.map((post) => {
 		return { post: post, imagePath: images[post.data.heroImage as string]() }
 	})
+
 ---
 
 <html lang="ja">
