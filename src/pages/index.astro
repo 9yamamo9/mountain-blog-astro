@@ -12,7 +12,12 @@ import ContentTag from '../components/ContentTag.astro'
 const posts = (await getCollection('blog'))
 	.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
 	.filter((post) => !post.data.editing)
-	.slice(0, 4)
+
+const latestPosts = posts.slice(0, 4)
+const categories = [...new Set(
+	posts.map((post) => post.data.category)
+		.sort((a, b) => b - a)
+)]
 
 const images = import.meta.glob<{ default: ImageMetadata }>(`/src/content/assets/hero-images/*.{jpeg,jpg,png,gif}`)
 posts.map((post) => {
@@ -29,41 +34,56 @@ posts.map((post) => {
 
 <body>
 <Header />
-<main class="w-[960px] m-auto min-h-[90vh] px-2 py-4 max-lg:w-full max-md:w-full">
-	<h1 class="text-3xl font-bold text-gray-700 mt-4 mb-2">Latest posts</h1>
-	<section>
-		<ul class="grid grid-cols-2 gap-5 max-md:gap-2 max-md:grid-cols-none">
-			{
-				posts.map((post) => (
-					<li class="">
-						<div class="group border rounded-xl hover:border-red-700">
-							<a
-								class="flex-col items-center divide-y max-md:flex-col max-md:divide-y"
-								href={`/blog/${post.slug}/`}>
-								<Image class="p-1 rounded-xl max-md:w-full"
-											 src={images[post.data.heroImage as string]()} alt="" />
-								<div class="p-2">
-									<h5
-										class="text-gray-600 font-bold leading-2 group-hover:text-red-700">{post.data.title}</h5>
-									<p class="text-sm text-gray-500 group-hover:text-red-700">{post.data.description}</p>
-									<p class="text-xs text-gray-500 text-right group-hover:text-red-700">
-										<FormattedDate date={post.data.pubDate} />
-									</p>
-									<div class="text-center">
-										{post.data.tags && post.data.tags.map((tag) => (
-											<ContentTag name={tag} />
-										))}
-									</div>
+<main class="w-[1024px] m-auto min-h-[90vh] px-2 py-4 max-lg:w-full max-md:w-full">
+	<div class="flex">
+
+		<div class="w-full h-min top-14 sticky rounded-xl border border-gray-300 bg-gray-50 m-4 p-2 max-md:hidden">
+			<h3 class="text-lg font-bold text-gray-500">Categories</h3>
+			{categories && categories.map((category) => (
+				<a class="text-sm text-gray-500" href=`/categories/${category}`>{category}</a>
+			))}
+		</div>
+
+		<div>
+			<h1 class="text-3xl font-bold text-gray-700 mt-4 mb-2">Latest posts</h1>
+
+			<section>
+				<ul class="grid grid-cols-2 gap-5 max-md:gap-2 max-md:grid-cols-none">
+					{
+						latestPosts.map((post) => (
+							<li class="">
+								<div class="group border rounded-xl hover:border-red-700">
+									<a
+										class="flex-col items-center divide-y max-md:flex-col max-md:divide-y"
+										href={`/blog/${post.slug}/`}>
+										<Image class="p-1 rounded-xl max-md:w-full"
+													 src={images[post.data.heroImage as string]()} alt="" />
+										<div class="p-2">
+											<h5
+												class="text-gray-600 font-bold leading-2 group-hover:text-red-700">{post.data.title}</h5>
+											<p class="text-sm text-gray-500 group-hover:text-red-700">{post.data.description}</p>
+											<p class="text-xs text-gray-500 text-right group-hover:text-red-700">
+												<FormattedDate date={post.data.pubDate} />
+											</p>
+											<div class="text-center">
+												{post.data.tags && post.data.tags.map((tag) => (
+													<ContentTag name={tag} />
+												))}
+											</div>
+										</div>
+									</a>
 								</div>
-							</a>
-						</div>
-					</li>
-				))
-			}
-		</ul>
-	</section>
-	<div class="mt-4 text-right">
-		<a class="text-lg text-gray-500 mt-4 mb-2 hover:text-red-700" href="/blog/1">📕Read more...</a>
+							</li>
+						))
+					}
+				</ul>
+			</section>
+
+			<div class="mt-4 text-right">
+				<a class="text-lg text-gray-500 mt-4 mb-2 hover:text-red-700" href="/blog/1">📕Read more...</a>
+			</div>
+
+		</div>
 	</div>
 </main>
 <Footer />
