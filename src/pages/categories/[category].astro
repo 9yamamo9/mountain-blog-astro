@@ -29,7 +29,6 @@ const categorizedPosts = (await getCollection('blog'))
 	.map((post) => {
 		return { post: post, imagePath: images[post.data.heroImage as string]() }
 	})
-
 ---
 
 <html lang="ja">
@@ -40,10 +39,11 @@ const categorizedPosts = (await getCollection('blog'))
 <body>
 <Header />
 <main class="w-[960px] m-auto px-2 py-4 max-lg:w-full max-md:w-full">
+	<h1 class="text-3xl font-bold text-gray-700 mt-4 mb-2">Category > {categorizedPosts[0].post.data.category}</h1>
 	<section>
 		<ul class="flex flex-col min-h-[100vh] gap-8 list-none max-md:gap-2">
 			{
-				categorizedPosts && categorizedPosts.map(({post, imagePath}: any) => (
+				categorizedPosts && categorizedPosts.map(({ post, imagePath }: any) => (
 					<li>
 						<a
 							class="group flex ease-in-out border rounded-lg border-slate-400 hover:border-red-700 items-center divide-x max-md:flex-col max-md:divide-y"
