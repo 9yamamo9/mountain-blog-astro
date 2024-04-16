@@ -23,7 +23,8 @@ posts.forEach((post) => {
 	const category = post.data.category
 
 	if (categoryCounter.has(category)) {
-		categoryCounter.set(category, categoryCounter.get(category) + 1)
+		const latestCount = categoryCounter.get(category) || 0
+		categoryCounter.set(category, latestCount + 1)
 	} else {
 		categoryCounter.set(category, 1)
 	}
