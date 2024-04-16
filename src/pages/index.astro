@@ -10,14 +10,25 @@ import FormattedDate from '../components/FormattedDate.astro'
 import ContentTag from '../components/ContentTag.astro'
 
 const posts = (await getCollection('blog'))
-	.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
 	.filter((post) => !post.data.editing)
 
-const latestPosts = posts.slice(0, 4)
-const categories = [...new Set(
-	posts.map((post) => post.data.category)
-		.sort((a, b) => b - a)
-)]
+const latestPosts = posts
+	.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
+	.slice(0, 4)
+
+const categories = [...new Set(posts.map((post) => post.data.category))].sort()
+
+const categoryCounter = new Map<string, number>()
+posts.forEach((post) => {
+	const category = post.data.category
+
+	if (categoryCounter.has(category)) {
+		categoryCounter.set(category, categoryCounter.get(category) + 1)
+	} else {
+		categoryCounter.set(category, 1)
+	}
+})
+
 
 const images = import.meta.glob<{ default: ImageMetadata }>(`/src/content/assets/hero-images/*.{jpeg,jpg,png,gif}`)
 posts.map((post) => {
@@ -37,10 +48,10 @@ posts.map((post) => {
 <main class="w-[1024px] m-auto min-h-[90vh] px-2 py-4 max-lg:w-full max-md:w-full">
 	<div class="flex">
 
-		<div class="w-full h-min top-14 sticky rounded-xl border border-gray-300 bg-gray-50 m-4 p-2 max-md:hidden">
+		<div class="w-full h-min top-14 sticky rounded-xl border border-gray-300 bg-gray-50 mx-4 my-16 p-2 max-md:hidden">
 			<h3 class="text-lg font-bold text-gray-500">Categories</h3>
 			{categories && categories.map((category) => (
-				<a class="text-sm text-gray-500" href=`/categories/${category}`>{category}</a>
+				<div><a class="text-sm text-gray-500" href=`/categories/${category}`>{category} ({categoryCounter.get(category)})</a></div>
 			))}
 		</div>
 
