@@ -2,6 +2,7 @@
 interface Props {
 	categories: string[]
 	categoryCounter: Map<string, number>
+	class: string
 }
 
 const { class: className, ...props } = Astro.props
