@@ -8,6 +8,7 @@ import { SITE_TITLE, SITE_DESCRIPTION } from '../consts'
 import { getCollection } from 'astro:content'
 import FormattedDate from '../components/FormattedDate.astro'
 import ContentTag from '../components/ContentTag.astro'
+import Categories from '../components/Categories.astro'
 
 const posts = (await getCollection('blog'))
 	.filter((post) => !post.data.editing)
@@ -49,12 +50,11 @@ posts.map((post) => {
 <main class="w-[1024px] m-auto min-h-[90vh] px-2 py-4 max-lg:w-full max-md:w-full">
 	<div class="flex">
 
-		<div class="w-full h-min top-14 sticky rounded-xl border border-gray-300 bg-gray-50 mx-4 my-16 p-2 max-md:hidden">
-			<h3 class="text-lg font-bold text-gray-500">Categories</h3>
-			{categories && categories.map((category) => (
-				<div><a class="text-sm text-gray-500" href=`/categories/${category}`>{category} ({categoryCounter.get(category)})</a></div>
-			))}
-		</div>
+		<Categories
+			class="w-full h-min top-14 sticky rounded-xl border border-gray-300 bg-gray-50 mx-4 my-16 p-2 max-md:hidden"
+			categories={categories}
+			categoryCounter={categoryCounter}
+		/>
 
 		<div>
 			<h1 class="text-3xl font-bold text-gray-700 mt-4 mb-2">Latest posts</h1>

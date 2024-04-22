@@ -1,0 +1,17 @@
+---
+interface Props {
+	categories: string[]
+	categoryCounter: Map<string, number>
+	class: string
+}
+
+const { class: className, ...props } = Astro.props
+---
+
+<div class={className}>
+	<h3 class="text-lg font-bold text-gray-500">Categories</h3>
+	{props.categories && props.categories.map((category) => (
+		<div><a class="text-sm text-gray-500" href=`/categories/${category}`>{category}
+			({props.categoryCounter.get(category)})</a></div>
+	))}
+</div>
