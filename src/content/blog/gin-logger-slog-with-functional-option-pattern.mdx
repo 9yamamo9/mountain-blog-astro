@@ -1,0 +1,189 @@
+---
+title: 'Go ginのLoggerをFunctional Option Patternとしてslogで設定する'
+description: '本ポストでは、GoのWebアプリケーションフレームワークであるginのLoggerを設定します。Loggerはslogを利用したものにします。また、各種設定値をFunctional Option Patternとして設定するように実装します。'
+category: 'Go'
+tags:
+ - 'Go'
+ - 'gin'
+ - 'slog'
+ - 'Logger'
+ - 'Functional Option Pattern'
+pubDate: 'May 21 2024'
+heroImage: '/src/content/assets/hero-images/gin-logger-slog-with-functional-option-pattern.png'
+editing: false
+---
+
+# はじめに
+GoによるRESTful APIを実装しようとした際に、今回はWebアプリケーションフレームワークである[**gin**](https://github.com/gin-gonic/gin)を利用しています。
+ginにはミドルウェア(middleware)がサポートされており、独自のLoggerを設定することができます。
+本ポストでは、slogを利用したLoggerの設定を実装していきます。
+
+# slogを利用したLoggerの実装
+まずは、ginに設定するLoggerをミドルウェアとして実装していきます。
+このLoggerには、設定値としてベース、クライアント、サーバに対して異なるログレベルを設定できるようにしたいと考えています。
+この設定値については、デザインパターンとして**Functional Option Pattern**を利用して、ログレベルを設定できるようにします。
+その上で、Logger自体を実装します。
+
+## Functional Option Patternによる可変な設定値の実現
+今回のLoggerは以下のような設定のための構造体を取り扱うことを想定します。
+
+```go
+type LoggerConfig struct {
+	BaseLogLevel     slog.Level
+	ClientErrorLevel slog.Level
+	ServerErrorLevel slog.Level
+}
+```
+
+この構造体で定義されている通り、各目的に応じたログレベルを設定するための関数を別途実装します。
+それが以下のコードです。
+
+```go
+type Option func(*LoggerConfig)
+
+func NewLoggerConfig(opts ...Option) *LoggerConfig {
+	lc := &LoggerConfig{}
+
+	for _, opt := range opts {
+		opt(lc)
+	}
+
+	return lc
+}
+
+func WithBaseLogLevel(level slog.Level) Option {
+	return func(c *LoggerConfig) {
+		c.BaseLogLevel = level
+	}
+}
+
+func WithClientErrorLogLevel(level slog.Level) Option {
+	return func(c *LoggerConfig) {
+		c.ClientErrorLevel = level
+	}
+}
+
+func WithServerErrorLogLevel(level slog.Level) Option {
+	return func(c *LoggerConfig) {
+		c.ServerErrorLevel = level
+	}
+}
+```
+
+構造体LoggerConfigの生成には、`NewLoggerConfig(opts ...Option)`で実装された関数を使います。
+`Option`は`*LoggerConfig`を引数とする関数を型として定義されていて、各種ログレベルを設定するための関数は、この`Option`型を返却する関数として定義します。
+
+## Logger本体の実装
+ginで利用するミドルウェアとして関数を実装するにあたっては、関数自体が返却する値の型は`gin.HandlerFunc`である必要があります。
+これは、引数として`*gin.Contex`をとる関数です。
+以下がコードとなります。
+
+```go
+var (
+	requestIDHeaderKey = "X-Request-ID"
+	timeFormater       = "2006/1/2 15:04:05.000 JTS"
+)
+
+func LoggerHandler(logger *slog.Logger, config *LoggerConfig) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		jst, err := time.LoadLocation("Asia/Tokyo")
+		if err != nil {
+			logger.Error("Failed to load location for Asia/Tokyo", "error", err)
+		}
+
+		start := time.Now().In(jst)
+		startStr := start.Format(timeFormater)
+		path := c.Request.URL.Path
+		query := c.Request.URL.RawQuery
+		method := c.Request.Method
+		clientIP := c.ClientIP()
+		userAgent := c.Request.UserAgent()
+		requestID := c.GetHeader(requestIDHeaderKey)
+
+		params := map[string]string{}
+		for _, p := range c.Params {
+			params[p.Key] = p.Value
+		}
+
+		loggerWithRequestID := logger.With("RequestID", requestID)
+
+		requestAttributes := []slog.Attr{
+			slog.String("Time", startStr),
+			slog.String("Method", method),
+			slog.String("Path", path),
+			slog.String("Query", query),
+			slog.Any("Params", params),
+			slog.String("ClientIP", clientIP),
+			slog.String("User Agent", userAgent),
+		}
+
+		loggerWithRequestID.LogAttrs(
+			c.Request.Context(),
+			config.BaseLogLevel,
+			"Request Log",
+			requestAttributes...,
+		)
+
+		c.Next()
+
+		end := time.Now().In(jst)
+		endStr := end.Format(timeFormater)
+		latency := end.Sub(start)
+		status := c.Writer.Status()
+
+		logLevel := determineLogLevel(status, config)
+
+		responseAttributes := []slog.Attr{
+			slog.String("Time", endStr),
+			slog.String("Latency", convertLatency(latency)),
+			slog.Int("Status", status),
+		}
+
+		loggerWithRequestID.LogAttrs(
+			c.Request.Context(),
+			logLevel,
+			"Response Log",
+			responseAttributes...,
+		)
+	}
+}
+
+func determineLogLevel(status int, config *LoggerConfig) slog.Level {
+	// do something
+}
+
+func convertLatency(latency time.Duration) string {
+	// do something
+}
+```
+
+ginのミドルウェアの特徴としては、`c.Next()`が挙げられるかと思います。
+ginのミドルウェアでは、`c.Next()`より前に記述されている実装は、実際にリクエストを受け取って処理が実施される前に実行されます。
+一方で、後に記述されている実装は、リクエストを受け取って処理が完了した後、最後に実行されます。
+そのため、例えば`c.Next()`の前後の時間差分を取得することで、リクエストの処理の時間を計算することができ、レイテンシなどをログに出力することが可能となります。
+これでLoggerの実装は完了です。
+
+# ミドルウェアの登録
+作成したLoggerをミドルウェアとして登録します。
+登録自体は、とてもシンプルです。
+
+```go
+engin := gin.New()
+
+engin.Use(middleware.LoggerHandler(
+	slog.New(slog.NewJSONHandler(os.Stdout, nil)),
+	middleware.NewLoggerConfig(
+		middleware.WithBaseLogLevel(slog.LevelInfo),
+		middleware.WithClientErrorLogLevel(slog.LevelWarn),
+		middleware.WithServerErrorLogLevel(slog.LevelError),
+	),
+))
+```
+
+上記の部分がその該当箇所になります。
+この処理を`main()`内などに実装することでミドルウェアの登録は完了です。
+ただし、注意するべきは、必要に応じて`engin.Use(gin.Recovery())`の実装もお忘れなく。
+
+# さいごに
+いかがでしたでしょうか。自身の備忘のためのポストとなっておりますので、わかりにくい部分もあるかと思います。
+誰かの役に立てれば、幸いです。
