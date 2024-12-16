@@ -1,0 +1,31 @@
+---
+interface Props {
+	publishedDates: Date[]
+	class: string
+}
+
+const { class: className, ...props } = Astro.props
+
+const publishDateYears = [...new Set(props.publishedDates.map((date) => {
+	return date.getFullYear()
+}))].sort((a, b) => b - a)
+
+const postCounterByYear = new Map<number, number>()
+props.publishedDates.forEach((date) => {
+	const fullYear = date.getFullYear()
+
+	if (postCounterByYear.has(fullYear)) {
+		const count = postCounterByYear.get(fullYear) || 0
+		postCounterByYear.set(fullYear, count + 1)
+	} else {
+		postCounterByYear.set(fullYear, 1)
+	}
+})
+---
+
+<div class={className}>
+	<h3 class="text-lg font-bold text-gray-500">Histories</h3>
+	{publishDateYears && publishDateYears.map((fullYear) => (
+		<div><a class="text-sm text-gray-500" href=`/histories/${fullYear}`>{fullYear} ({postCounterByYear.get(fullYear)})</a></div>
+	))}
+</div>

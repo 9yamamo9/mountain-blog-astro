@@ -9,6 +9,7 @@ import { getCollection } from 'astro:content'
 import FormattedDate from '../components/FormattedDate.astro'
 import ContentTag from '../components/ContentTag.astro'
 import Categories from '../components/Categories.astro'
+import Histories from '../components/Histories.astro'
 
 const posts = (await getCollection('blog'))
 	.filter((post) => !post.data.editing)
@@ -31,6 +32,8 @@ posts.forEach((post) => {
 	}
 })
 
+const pubDates = [...new Set(posts.map((post) => post.data.pubDate))].sort()
+
 
 const images = import.meta.glob<{ default: ImageMetadata }>(`/src/content/assets/hero-images/*.{jpeg,jpg,png,gif}`)
 posts.map((post) => {
@@ -47,11 +50,11 @@ posts.map((post) => {
 
 <body>
 <Header />
-<main class="w-[1024px] m-auto min-h-[90vh] px-2 py-4 max-lg:w-full max-md:w-full">
+<main class="w-[1536px] m-auto min-h-[90vh] px-2 py-4 max-lg:w-full max-md:w-full">
 	<div class="flex">
 
 		<Categories
-			class="w-[75%] h-min top-14 sticky rounded-xl border border-gray-300 bg-gray-50 mx-4 my-16 p-2 max-md:hidden"
+			class="w-[50%] h-min top-14 sticky rounded-xl border border-gray-300 bg-gray-50 mx-4 my-16 p-2 max-md:hidden"
 			categories={categories}
 			categoryCounter={categoryCounter}
 		/>
@@ -96,6 +99,12 @@ posts.map((post) => {
 			</div>
 
 		</div>
+
+		<Histories
+			class="w-[50%] h-min top-14 sticky rounded-xl border border-gray-300 bg-gray-50 mx-4 my-16 p-2 max-md:hidden"
+			publishedDates={pubDates}
+		/>
+
 	</div>
 </main>
 <Footer />
