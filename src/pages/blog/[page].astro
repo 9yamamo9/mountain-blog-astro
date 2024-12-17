@@ -9,6 +9,7 @@ import FormattedDate from '../../components/FormattedDate.astro'
 import Header from '../../components/Header.astro'
 import { SITE_DESCRIPTION, SITE_TITLE } from '../../consts'
 import Pagination from '../../components/Pagination.astro'
+import PostList from '../../components/PostList.astro'
 
 export async function getStaticPaths({ paginate }: any) {
 	const posts = (await getCollection('blog'))
@@ -59,35 +60,7 @@ const { page } = Astro.props
 <body>
 <Header />
 <main class="w-[960px] m-auto px-2 py-4 max-lg:w-full max-md:w-full">
-	<section>
-		<ul class="flex flex-col min-h-[100vh] gap-8 list-none max-md:gap-2">
-			{
-				page.data && page.data.map(({ post, imagePath }: any) => (
-					<li>
-						<a
-							class="group flex ease-in-out border rounded-lg border-slate-400 hover:border-red-700 items-center divide-x max-md:flex-col max-md:divide-y"
-							href={`/blog/${post.slug}/`}>
-							<Image class="w-[30%] p-2 max-md:w-full"
-										 src={imagePath} alt="" />
-							<div class="p-2">
-								<h5
-									class="text-gray-600 font-bold leading-2 group-hover:text-red-700">{post.data.title}</h5>
-								<p class="text-sm text-gray-500 group-hover:text-red-700">{post.data.description}</p>
-								<p class="text-xs text-gray-500 text-right group-hover:text-red-700">
-									<FormattedDate date={post.data.pubDate} />
-								</p>
-								<div class="max-md:text-center">
-									{post.data.tags && post.data.tags.map((tag: any) => (
-										<ContentTag name={tag} />
-									))}
-								</div>
-							</div>
-						</a>
-					</li>
-				))
-			}
-		</ul>
-	</section>
+	<PostList posts={page.data} />
 	{page.url && (
 		<div class="flex justify-center mt-4">
 			<Pagination url={page.url} />
