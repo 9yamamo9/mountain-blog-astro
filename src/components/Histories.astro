@@ -26,6 +26,7 @@ props.publishedDates.forEach((date) => {
 <div class={className}>
 	<h3 class="text-lg font-bold text-gray-500">Histories</h3>
 	{publishDateYears && publishDateYears.map((fullYear) => (
-		<div><a class="text-sm text-gray-500" href=`/histories/${fullYear}`>{fullYear} ({postCounterByYear.get(fullYear)})</a></div>
+		<div><a class="text-sm text-gray-500 hover:text-red-700" href=`/histories/${fullYear}`>{fullYear}
+			({postCounterByYear.get(fullYear)})</a></div>
 	))}
 </div>
