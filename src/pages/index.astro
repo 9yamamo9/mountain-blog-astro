@@ -10,6 +10,7 @@ import FormattedDate from '../components/FormattedDate.astro'
 import ContentTag from '../components/ContentTag.astro'
 import Categories from '../components/Categories.astro'
 import Histories from '../components/Histories.astro'
+import Introduction from '../components/Introduction.astro'
 
 const posts = (await getCollection('blog'))
 	.filter((post) => !post.data.editing)
@@ -100,10 +101,16 @@ posts.map((post) => {
 
 		</div>
 
-		<Histories
-			class="w-[50%] h-min top-14 sticky rounded-xl border border-gray-300 bg-gray-50 mx-4 my-16 p-2 max-md:hidden"
-			publishedDates={pubDates}
-		/>
+		<div class="flex flex-col w-[50%] top-14 my-16 gap-4 sticky">
+			<Introduction
+				class="rounded-xl border border-gray-300 bg-gray-50 mx-4 p-2 max-md:hidden"
+			/>
+
+			<Histories
+				class="rounded-xl border border-gray-300 bg-gray-50 mx-4 p-2 max-md:hidden"
+				publishedDates={pubDates}
+			/>
+		</div>
 
 	</div>
 </main>
