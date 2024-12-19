@@ -54,12 +54,6 @@ posts.map((post) => {
 <main class="w-[1536px] m-auto min-h-[90vh] px-2 py-4 max-lg:w-full max-md:w-full">
 	<div class="flex">
 
-		<Categories
-			class="w-[50%] h-min top-14 sticky rounded-xl border border-gray-300 bg-gray-50 mx-4 my-16 p-2 max-md:hidden"
-			categories={categories}
-			categoryCounter={categoryCounter}
-		/>
-
 		<div>
 			<h1 class="text-3xl font-bold text-gray-700 mt-4 mb-2">Latest posts</h1>
 
@@ -101,13 +95,19 @@ posts.map((post) => {
 
 		</div>
 
-		<div class="flex flex-col w-[50%] top-14 my-16 gap-4 sticky">
-			<Introduction
-				class="rounded-xl border border-gray-300 bg-gray-50 mx-4 p-2 max-md:hidden"
+		<div class="flex flex-col w-[40%] top-14 mx-4 my-16 gap-4 sticky max-md:hidden">
+			<Introduction />
+
+			<hr class="w-2/3 mb-1"/>
+
+			<Categories
+				class=" rounded-xl border border-gray-300 bg-gray-50 p-2"
+				categories={categories}
+				categoryCounter={categoryCounter}
 			/>
 
 			<Histories
-				class="rounded-xl border border-gray-300 bg-gray-50 mx-4 p-2 max-md:hidden"
+				class="rounded-xl border border-gray-300 bg-gray-50 p-2"
 				publishedDates={pubDates}
 			/>
 		</div>
