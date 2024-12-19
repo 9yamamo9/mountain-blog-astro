@@ -1,0 +1,33 @@
+---
+interface Props {
+	class?: string
+}
+
+const { class: className } = Astro.props
+---
+
+<div class={className}>
+	<p class="text-lg font-bold text-gray-500">It's Me</p>
+
+	<div class="flex flex-col gap-1">
+
+		<a class="flex text-gray-700"
+			 href="https://www.linkedin.com/in/yuta-yamamori-786883175/" aria-label="LinkedIn" target="_blank">
+			<div class="i-ri-linkedin-fill w-6 h-6">LinkedIn</div>
+			<p class="text-lg text-gray-700 ml-1">@Yuta Yamamori</p>
+		</a>
+
+		<a class="flex text-gray-700" href="https://twitter.com/9yamamo9" aria-label="X" target="_blank">
+			<div class="i-ri-twitter-x-fill w-6 h-6">X</div>
+			<p class="text-lg text-gray-700 ml-1">@9yamamo9</p>
+		</a>
+
+		<a class="flex text-gray-700" href="https://github.com/9yamamo9"
+			 aria-label="GitHub"
+			 target="_blank">
+			<div class="i-ri-github-fill w-6 h-6">GitHub</div>
+			<p class="text-lg text-gray-700 ml-1">@9yamamo9</p>
+		</a>
+
+	</div>
+</div>
