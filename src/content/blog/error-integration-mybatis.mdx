@@ -1,0 +1,70 @@
+---
+title: 'MyBatisを導入した際にLoading class com.mysql.jdbc.Driver...で怒られたので対応した。'
+description: 'MyBatisをORMとして導入しようとした際に、非推奨のドライバーを利用していたためにエラーで怒られていました。エラーメッセージに対する対応内容を記述しています。'
+category: 'Java'
+tags:
+ - 'Java'
+ - 'MyBatis'
+ - 'Spring Boot'
+ - 'ORM'
+pubDate: 'January 02 2025'
+heroImage: '/src/content/assets/hero-images/error-integration-mybatis.png'
+editing: false
+---
+
+import LinkCard from '../../components/LinkCard.tsx'
+
+# はじめに
+現在、[Kotlinサーバーサイドプログラミング実践開発](https://amzn.asia/d/2SORv15)を読んでいます。
+第5章　O/Rマッパーを使用してデータベースへ接続するのハンズオンを実施している際に、以下のようなエラーに出会いました。
+
+```
+Loading class `com.mysql.jdbc.Driver'. This is deprecated. The new driver class is `com.mysql.cj.jdbc.Driver'. The driver is automatically registered via the SPI and manual loading of the driver class is generally unnecessary.
+```
+
+書籍の指示に従って対応していましたが、上のように利用するドライバーが非推奨でした。
+このエラーに対する対応内容を記載していきます。
+
+# 修正対象
+MyBatisを使用したデータベースアクセスによるCRUD操作においては、設定ファイル`mybatis-config.xml`に対して設定内容を記載する必要があります。
+
+## 設定ファイルmybatis-config.xmlについて
+書籍内において設定ファイル`mybatis-config.xml`は以下のようになっています。
+
+```xml
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+        PUBLIC "-//mybatis.org//DTD config 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-config.dtd" >
+<configuration>
+    <environments default="development">
+        <environment id="development">
+            <transactionManager type="JDBC"/>
+            <dataSource type="POOLED">
+                <property name="driver" value="com.mysql.jdbc.Driver"/>
+                <property name="url" value="jdbc:mysql://127.0.0.1:3306/example"/>
+                <property name="username" value="root"/>
+                <property name="password" value="mysql"/>
+            </dataSource>
+        </environment>
+    </environments>
+    <mappers>
+        <mapper class="database.UserMapper"/>
+    </mappers>
+</configuration>
+```
+
+エラーは上の設定ファイル内の`<property name="driver" value="com.mysql.jdbc.Driver"/>`の部分に対して発生しています。
+`om.mysql.jdbc.Driver`が非推奨となっています。
+
+## 修正内容
+前節の通り、非推奨となっているドライバーを変更する必要があります。
+そのため、以下のようにドライバーを`com.mysql.cj.jdbc.Driver`に指定します。
+
+```xml
+<property name="driver" value="com.mysql.cj.jdbc.Driver"/>
+```
+
+# さいごに
+この修正により正常に動作するようになりました。
+今回も備忘のための投稿となりますので、淡白な内容となりますがどこかの方のお役に立てれば嬉しいです。
